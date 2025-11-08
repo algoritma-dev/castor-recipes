@@ -1,0 +1,49 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use CastorRecipes\Base\RecipeRegistry;
+use CastorRecipes\Installer\RecipeInstaller;
+use CastorRecipes\Recipe\WordPress\WordPressRecipe;
+use CastorRecipes\Recipe\Symfony\SymfonyRecipe;
+use CastorRecipes\Recipe\Laravel\LaravelRecipe;
+use CastorRecipes\Recipe\TYPO3\Typo3Recipe;
+use CastorRecipes\Recipe\CodeIgniter\CodeIgniterRecipe;
+use CastorRecipes\Recipe\Magento2\Magento2Recipe;
+use CastorRecipes\Recipe\Shopware\ShopwareRecipe;
+use CastorRecipes\Recipe\OroCommerce\OroCommerceRecipe;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+
+// Autoload
+$autoloadFiles = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../autoload.php',
+];
+
+foreach ($autoloadFiles as $autoloadFile) {
+    if (file_exists($autoloadFile)) {
+        require_once $autoloadFile;
+        break;
+    }
+}
+
+// Register recipes
+$registry = RecipeRegistry::getInstance();
+$registry->register(new WordPressRecipe());
+$registry->register(new SymfonyRecipe());
+$registry->register(new LaravelRecipe());
+$registry->register(new Typo3Recipe());
+$registry->register(new CodeIgniterRecipe());
+$registry->register(new Magento2Recipe());
+$registry->register(new ShopwareRecipe());
+$registry->register(new OroCommerceRecipe());
+
+// Create installer
+$input = new ArgvInput();
+$output = new ConsoleOutput();
+$installer = new RecipeInstaller($registry, $input, $output);
+
+// Run installer
+exit($installer->run());

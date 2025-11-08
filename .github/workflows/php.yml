@@ -1,0 +1,63 @@
+name: PHP Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php-versions }} Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: ['8.2', '8.3', '8.4', '8.5']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: mbstring, intl, zip, pdo_mysql, xml
+        coverage: xdebug
+        tools: composer:v2, phpunit
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-${{ matrix.php-versions }}-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+
+    - name: Run test suite
+      run: composer run-script test
+
+    - name: Run PHPStan
+      run: composer run-script phpstan
+
+    - name: Run PHP CS Fixer
+      run: composer run-script cs-fix -- --dry-run --diff
+
+    - name: Generate code coverage report
+      run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+    - name: Check code coverage
+      run: |
+        COVERAGE=$(php -r 'echo round(simplexml_load_file("coverage.xml")->project->metrics["statements"] / simplexml_load_file("coverage.xml")->project->metrics["elements"] * 100);')
+        echo "Code coverage: $COVERAGE%"
+        if [ "$COVERAGE" -lt 90 ]; then
+          echo "Code coverage is below 90%"
+          exit 1
+        fi

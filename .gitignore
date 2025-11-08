@@ -1,0 +1,36 @@
+# Composer
+/vendor/
+/composer.lock
+
+# PHPUnit
+/phpunit.xml
+/.phpunit.result.cache
+/coverage/
+
+# PHP-CS-Fixer
+/.php-cs-fixer.cache
+
+# PHPStan
+/.phpstan.result.cache
+
+# IDE files
+/.idea/
+/.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+/docker-compose.override.yml
+
+# Environment
+/.env
+/.env.local
+/.env.*.local
+
+# Generated files
+/var/
+/build/
