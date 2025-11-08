@@ -34,3 +34,89 @@ function magento2_test(): void
 {
     run(dockerize('vendor/bin/phpunit'));
 }
+
+
+#[AsTask(description: 'Run setup upgrade (DB/schema updates)')]
+function magento2_setup_upgrade(): void
+{
+    run(dockerize('php bin/magento setup:upgrade'));
+}
+
+#[AsTask(description: 'Compile DI')]
+function magento2_di_compile(): void
+{
+    run(dockerize('php bin/magento setup:di:compile'));
+}
+
+#[AsTask(description: 'Deploy static content (set M2_LOCALES env, default en_US)')]
+function magento2_static_deploy(): void
+{
+    $locales = getenv('M2_LOCALES') ?: 'en_US';
+    run(dockerize(sprintf('php bin/magento setup:static-content:deploy -f %s', escapeshellarg($locales))));
+}
+
+#[AsTask(description: 'Cache clean')]
+function magento2_cache_clean(): void
+{
+    run(dockerize('php bin/magento cache:clean'));
+}
+
+#[AsTask(description: 'Cache flush')]
+function magento2_cache_flush(): void
+{
+    run(dockerize('php bin/magento cache:flush'));
+}
+
+#[AsTask(description: 'Reindex all')]
+function magento2_indexer_reindex(): void
+{
+    run(dockerize('php bin/magento indexer:reindex'));
+}
+
+#[AsTask(description: 'Indexer status')]
+function magento2_indexer_status(): void
+{
+    run(dockerize('php bin/magento indexer:status'));
+}
+
+#[AsTask(description: 'Enable a module (set M2_MODULE env)')]
+function magento2_module_enable(): void
+{
+    $module = getenv('M2_MODULE') ?: '';
+    if ($module === '') {
+        run(dockerize('php bin/magento module:status'));
+
+        return;
+    }
+    run(dockerize(sprintf('php bin/magento module:enable %s', escapeshellarg($module))));
+}
+
+#[AsTask(description: 'Disable a module (set M2_MODULE env)')]
+function magento2_module_disable(): void
+{
+    $module = getenv('M2_MODULE') ?: '';
+    if ($module === '') {
+        run(dockerize('php bin/magento module:status'));
+
+        return;
+    }
+    run(dockerize(sprintf('php bin/magento module:disable %s', escapeshellarg($module))));
+}
+
+#[AsTask(description: 'Enable maintenance mode')]
+function magento2_maintenance_enable(): void
+{
+    run(dockerize('php bin/magento maintenance:enable'));
+}
+
+#[AsTask(description: 'Disable maintenance mode')]
+function magento2_maintenance_disable(): void
+{
+    run(dockerize('php bin/magento maintenance:disable'));
+}
+
+#[AsTask(description: 'Run cron')]
+function magento2_cron_run(): void
+{
+    run(dockerize('php bin/magento cron:run'));
+}

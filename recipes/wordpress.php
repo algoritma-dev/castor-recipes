@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Castor\Attribute\AsTask;
 
+use function Castor\io;
 use function Castor\run;
 
 require_once __DIR__ . '/common.php';
@@ -43,4 +44,87 @@ function wp_build(): void
         $cmd = file_exists('yarn.lock') ? 'yarn install && yarn build' : 'npm ci && npm run build';
         run(dockerize($cmd));
     }
+}
+
+
+#[AsTask(description: 'Install and activate a plugin (set WP_PLUGIN env)')]
+function wp_plugin_install_activate(): void
+{
+    $plugin = getenv('WP_PLUGIN') ?: '';
+    if ($plugin === '') {
+        run(dockerize('wp plugin list'));
+
+        return;
+    }
+    run(dockerize(sprintf('wp plugin install %s --activate --force', escapeshellarg($plugin))));
+}
+
+#[AsTask(description: 'Install and activate a theme (set WP_THEME env)')]
+function wp_theme_install_activate(): void
+{
+    $theme = getenv('WP_THEME') ?: '';
+    if ($theme === '') {
+        run(dockerize('wp theme list'));
+
+        return;
+    }
+    run(dockerize(sprintf('wp theme install %s --activate --force', escapeshellarg($theme))));
+}
+
+#[AsTask(description: 'Flush permalinks')]
+function wp_permalinks_flush(): void
+{
+    run(dockerize('wp rewrite flush --hard'));
+}
+
+#[AsTask(description: 'Create an admin user (env: WP_ADMIN_USER, WP_ADMIN_PASS, WP_ADMIN_EMAIL)')]
+function wp_user_create_admin(): void
+{
+    $user = getenv('WP_ADMIN_USER') ?: 'admin2';
+    $pass = getenv('WP_ADMIN_PASS') ?: 'Admin123!';
+    $email = getenv('WP_ADMIN_EMAIL') ?: 'admin2@example.com';
+    run(dockerize(sprintf(
+        'wp user create %s %s --role=administrator --user_pass=%s',
+        escapeshellarg($user),
+        escapeshellarg($email),
+        escapeshellarg($pass)
+    )));
+}
+
+#[AsTask(description: 'Database export (to file, set WP_DB_EXPORT default db.sql)')]
+function wp_db_export(): void
+{
+    $file = getenv('WP_DB_EXPORT') ?: 'db.sql';
+    run(dockerize(sprintf('wp db export %s', escapeshellarg($file))));
+}
+
+#[AsTask(description: 'Database import (from file, set WP_DB_IMPORT)')]
+function wp_db_import(): void
+{
+    $file = getenv('WP_DB_IMPORT') ?: '';
+    if ($file === '') {
+        io()->write('Set WP_DB_IMPORT to the SQL file path');
+
+        return;
+    }
+    run(dockerize(sprintf('wp db import %s', escapeshellarg($file))));
+}
+
+#[AsTask(description: 'Search-replace in DB (set WP_SR_FROM, WP_SR_TO)')]
+function wp_search_replace(): void
+{
+    $from = getenv('WP_SR_FROM') ?: '';
+    $to = getenv('WP_SR_TO') ?: '';
+    if ($from === '' || $to === '') {
+        io()->write('Set WP_SR_FROM and WP_SR_TO');
+
+        return;
+    }
+    run(dockerize(sprintf('wp search-replace %s %s --all-tables', escapeshellarg($from), escapeshellarg($to))));
+}
+
+#[AsTask(description: 'Flush caches (if any caching plugin is present)')]
+function wp_cache_flush(): void
+{
+    run(dockerize('wp cache flush'));
 }

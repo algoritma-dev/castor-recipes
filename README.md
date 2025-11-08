@@ -42,13 +42,13 @@ List available tasks:
 vendor/bin/castor
 ```
 
-Examples of included tasks:
-- Symfony: `sf_install`, `sf_migrate`, `sf_cache_clear`, `sf_test`
-- Laravel: `laravel_install`, `laravel_migrate_seed`, `laravel_cache`, `laravel_test`, `laravel_queue`
-- Shopware6: `shopware_setup`, `shopware_build`, `shopware_test`
-- OroCommerce: `oro_setup`, `oro_build`, `oro_test`
-- Magento 2: `magento2_setup`, `magento2_dev`, `magento2_test`
-- WordPress: `wp_setup`, `wp_update_all`, `wp_build`
+Examples of included tasks (not exhaustive):
+- Symfony: `sf_install`, `sf_serve`, `sf_migrate`, `sf_migrate_diff`, `sf_db_create`, `sf_db_drop`, `sf_fixtures_load`, `sf_cache_clear`, `sf_cache_warmup`, `sf_assets_install`, `sf_lint_yaml`, `sf_lint_twig`, `sf_lint_container`, `sf_messenger_consume`, `sf_logs_tail`, `sf_test`, `sf_console`
+- Laravel: `laravel_install`, `laravel_serve`, `laravel_migrate`, `laravel_seed`, `laravel_migrate_seed`, `laravel_migrate_fresh`, `laravel_key_generate`, `laravel_cache`, `laravel_cache_clear_all`, `laravel_config_cache`, `laravel_route_cache`, `laravel_event_cache`, `laravel_test`, `laravel_queue`, `laravel_queue_restart`, `laravel_queue_listen`, `laravel_schedule_run`, `laravel_storage_link`, `laravel_tinker`
+- Shopware: `shopware_setup`, `shopware_build`, `shopware_test`, `shopware_plugin_refresh`, `shopware_plugin_install_activate`, `shopware_theme_compile`, `shopware_migrate`, `shopware_migrate_destructive`, `shopware_admin_create`
+- OroCommerce: `oro_setup`, `oro_build`, `oro_update`, `oro_cache_clear`, `oro_assets_build`, `oro_search_reindex`, `oro_mq_consume`, `oro_test`
+- Magento 2: `magento2_setup`, `magento2_setup_upgrade`, `magento2_dev`, `magento2_di_compile`, `magento2_static_deploy`, `magento2_cache_clean`, `magento2_cache_flush`, `magento2_indexer_reindex`, `magento2_indexer_status`, `magento2_module_enable`, `magento2_module_disable`, `magento2_maintenance_enable`, `magento2_maintenance_disable`, `magento2_cron_run`, `magento2_test`
+- WordPress: `wp_setup`, `wp_update_all`, `wp_build`, `wp_plugin_install_activate`, `wp_theme_install_activate`, `wp_permalinks_flush`, `wp_user_create_admin`, `wp_db_export`, `wp_db_import`, `wp_search_replace`, `wp_cache_flush`
 
 Run a task, for example:
 

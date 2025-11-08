@@ -27,9 +27,14 @@ function dockerize(string $command, ?string $workdir = null): string
 
     $workdirArg = $workdir ? sprintf('--workdir %s', escapeshellarg($workdir)) : '';
 
+    $process = run(sprintf('docker compose -f %s ps -q %s', escapeshellarg($compose), escapeshellarg($service)));
+
+    $cmd = $process->getOutput() !== '' && $process->getOutput() !== '0' ? 'exec' : 'run';
+
     return sprintf(
-        'docker compose -f %s exec %s %s sh -lc %s',
+        'docker compose -f %s %s %s %s sh -lc %s',
         escapeshellarg($compose),
+        escapeshellarg($cmd),
         escapeshellarg($service),
         $workdirArg,
         escapeshellarg($command)
