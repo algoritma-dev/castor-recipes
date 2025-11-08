@@ -1,208 +1,93 @@
-# Castor Recipes
+# Castor Recipes (Composer Plugin)
 
-A collection of ready-to-use Castor recipes for various platforms and frameworks. This project provides a standardized way to create, share, and execute Castor recipes for different PHP platforms and frameworks.
-
-## Supported Platforms
-
-Currently available:
-- WordPress
-- Symfony
-- Laravel
-- TYPO3
-- CodeIgniter
-- Magento 2
-- Shopware
-- OroCommerce
-
-Planned (not yet implemented):
-- (none for now)
+Composer plugin that installs ready-to-use recipes for [Castor](https://castor.jolicode.com) for various PHP frameworks/platforms.
+During installation it asks which recipe to use and:
+- creates a `castor.php` file in your project root with a `require` to the selected recipe if it does not exist;
+- if `castor.php` already exists, it shows the instructions to add the `require` manually.
 
 ## Requirements
+- PHP >= 8.2
+- Composer 2
+- [jolicode/castor](https://github.com/jolicode/Castor) (installed as a dependency of this plugin)
+- Optional Docker (to run tasks in containers)
 
-- PHP 8.1 or higher
-- Composer 2.0 or higher
-- Docker (optional, for containerized execution)
-
-## Features
-
-- Ready-to-use recipes for popular PHP platforms and frameworks
-- Interactive recipe installer (Composer script and Castor task)
-- Support for both Docker and direct shell execution
-- Extensible architecture for custom recipes
+## Supported Platforms/Frameworks
+- Symfony (`recipes/symfony.php`)
+- Laravel (`recipes/laravel.php`)
+- Shopware6 (`recipes/shopware6.php`)
+- OroCommerce (`recipes/orocommerce.php`)
+- Magento 2 (`recipes/magento2.php`)
+- WordPress (`recipes/wordpress.php`)
 
 ## Installation
+In your existing project:
 
 ```bash
-composer create-project raffaelecarelle/castor-recipes
-cd castor-recipes
-composer install
+composer require --dev raffaelecarelle/castor-recipes
 ```
 
-Interactive installer (Composer script):
+During installation you will be asked to choose a recipe. If `castor.php` does not exist, it will be created automatically with the correct `require`, for example:
 
-```bash
-composer run-script install-recipe
+```php
+<?php
+require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';
 ```
+
+If the file already exists, instructions will be printed to add the `require` line manually.
 
 ## Usage
-
-### List available recipes
-
-```bash
-vendor/bin/castor recipes:list
-```
-
-### Run a recipe (host shell)
+List available tasks:
 
 ```bash
-# WordPress
-vendor/bin/castor run:wordpress
-
-# Symfony
-vendor/bin/castor run:symfony
-
-# Laravel
-vendor/bin/castor run:laravel
-
-# TYPO3
-vendor/bin/castor run:typo3
-
-# CodeIgniter
-vendor/bin/castor run:codeigniter
-
-# Magento 2
-vendor/bin/castor run:magento2
-
-# Shopware
-vendor/bin/castor run:shopware
-
-# OroCommerce
-vendor/bin/castor run:orocommerce
+vendor/bin/castor
 ```
 
-### Interactive installer
+Examples of included tasks:
+- Symfony: `sf_install`, `sf_migrate`, `sf_cache_clear`, `sf_test`
+- Laravel: `laravel_install`, `laravel_migrate_seed`, `laravel_cache`, `laravel_test`, `laravel_queue`
+- Shopware6: `shopware_setup`, `shopware_build`, `shopware_test`
+- OroCommerce: `oro_setup`, `oro_build`, `oro_test`
+- Magento 2: `magento2_setup`, `magento2_dev`, `magento2_test`
+- WordPress: `wp_setup`, `wp_update_all`, `wp_build`
 
-You can run the interactive installer either via Castor or via Composer script/bin:
+Run a task, for example:
 
 ```bash
-# Using Castor
-composer install  # ensure dependencies are installed first
-vendor/bin/castor install:interactive
-
-# Using Composer script
-composer run-script install-recipe
-
-# Using the bin helper
-./bin/install-recipe
+vendor/bin/castor sf_install
 ```
 
-### Using Docker
+## Running in Docker (optional)
+Recipes can run locally or inside a Docker container depending on environment variables.
 
-```bash
-# Start the Docker environment
-docker-compose up -d
-
-# List recipes
-docker-compose exec app vendor/bin/castor recipes:list
-
-# Run a recipe
-docker-compose exec app vendor/bin/castor run:wordpress
-```
-
-## Configuration
-
-Recipes can be configured using environment variables or a YAML configuration file. Configuration is read in this order:
-1) Environment variables with prefix `CASTOR_`
-2) YAML file specified by env var `CASTOR_CONFIG_FILE`
-3) `castor.yaml` in the current working directory
+- Set `CASTOR_DOCKER=1` to use Docker.
+- Docker Compose service to use: `DOCKER_SERVICE` (default: `php`).
+- Compose file: `DOCKER_COMPOSE_FILE` (default: `docker-compose.yml`).
 
 Examples:
 
 ```bash
-# Using environment variables (prefix CASTOR_)
-CASTOR_ENV=dev vendor/bin/castor run:wordpress
-CASTOR_PROJECT_NAME=my-app vendor/bin/castor run:symfony
+# Local execution (default)
+vendor/bin/castor sf_test
 
-# Using a configuration file (YAML)
-export CASTOR_CONFIG_FILE=my-config.yaml
-vendor/bin/castor run:laravel
+# Using Docker Compose (service "php")
+CASTOR_DOCKER=1 DOCKER_SERVICE=php vendor/bin/castor sf_test
+
+# Using an alternative compose file
+CASTOR_DOCKER=1 DOCKER_COMPOSE_FILE=docker/docker-compose.yml vendor/bin/castor laravel_test
 ```
 
-Example `castor.yaml` (global defaults):
-
-```yaml
-# Global defaults
-env: dev
-project_dir: ./my-project
-```
-
-Symfony recipe example overrides:
-
-```yaml
-symfony_version: "6.3"
-project_name: "symfony-app"
-database_url: "mysql://root:root@127.0.0.1:3306/symfony?serverVersion=8.0"
-mailer_dsn: "smtp://localhost:1025"
-```
-
-Laravel recipe example overrides:
-
-```yaml
-laravel_version: "10.x"
-project_name: "laravel-app"
-database_connection: mysql
-database_host: 127.0.0.1
-database_port: "3306"
-database_name: laravel
-database_user: root
-database_password: root
-```
-
-WordPress recipe example overrides:
-
-```yaml
-wp_version: latest
-db_name: wordpress
-db_user: wordpress
-db_password: wordpress
-db_host: localhost
-site_url: http://localhost:8080
-admin_user: admin
-admin_password: password
-admin_email: admin@example.com
-```
-
-## Creating Custom Recipes
-
-You can extend existing recipes or create new ones:
+## Adding multiple recipes
+You can include multiple recipes at the same time by editing `castor.php` and adding more `require` lines:
 
 ```php
-// custom/MyCustomRecipe.php
-namespace Custom;
-
-use CastorRecipes\Base\AbstractRecipe;
-
-class MyCustomRecipe extends AbstractRecipe
-{
-    public function configure(): void
-    {
-        // Your custom configuration
-    }
-}
+<?php
+require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';
+require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/laravel.php';
 ```
 
-## Recipe Architecture
-
-Recipes in this project follow a standardized architecture:
-
-- **RecipeInterface**: Defines the contract that all recipes must implement
-- **AbstractRecipe**: Provides common functionality for all recipes
-- **RecipeRegistry**: Manages recipe registration and discovery
-
-Each recipe consists of:
-1. **Configuration**: Define parameters and requirements
-2. **Execution**: Implement the actual recipe logic
-3. **Validation**: Check if the recipe can be executed in the current environment
+## Notes
+- Specific commands (e.g., `bin/console`, `php artisan`, `bin/magento`, `wp`) must be available in the project/in the container.
+- The recipes are basic examples: adapt the tasks to your project's needs.
 
 ## Development
 
