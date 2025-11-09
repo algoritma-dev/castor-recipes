@@ -8,76 +8,135 @@ use function Castor\run;
 
 require_once __DIR__ . '/common.php';
 
-#[AsTask(description: 'Install dependencies and prepare Shopware')]
-function shopware_setup(): void
+function sw_console_bin(): string { return getenv('SW_CONSOLE') ?: 'bin/console'; }
+
+#[AsTask(description: 'Install dependencies and prepare Shopware (system:install)', aliases: ['shopware_setup'])]
+function shopware_system_install(string $args = '--create-database --basic-setup --force'): void
 {
-    run(dockerize('composer install'));
-    run(dockerize('bin/console system:install --create-database --basic-setup --force')); // Shopware >= 6
+    run(dockerize(sprintf('%s %s system:install %s', php(), sw_console_bin(), $args)));
 }
 
 #[AsTask(description: 'Rebuild cache and indexes')]
-function shopware_build(): void
+function shopware_build(bool $storefront = true, bool $admin = true, string $args = ''): void
 {
-    run(dockerize('bin/console cache:clear'));
-    run(dockerize('bin/console dal:refresh:index')); // data abstraction layer
+    shopware_cache_clear();
+    run(dockerize(sprintf('%s %s dal:refresh:index %s', php(), sw_console_bin(), $args))); // data abstraction layer
+    if ($storefront) {
+        shopware_storefront_build();
+    }
+    if ($admin) {
+        shopware_administration_build();
+    }
+}
+
+#[AsTask(description: 'Clear Shopware cache')]
+function shopware_cache_clear(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s cache:clear %s', php(), sw_console_bin(), $args)));
+}
+
+#[AsTask(description: 'Build Storefront (if present)')]
+function shopware_storefront_build(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s storefront:build %s', php(), sw_console_bin(), $args)));
+}
+
+#[AsTask(description: 'Build Administration (if present)')]
+function shopware_administration_build(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s administration:build %s', php(), sw_console_bin(), $args)));
 }
 
 #[AsTask(description: 'Run PHP tests (PHPUnit)')]
-function shopware_test(): void
+function shopware_test(string $args = ''): void
 {
-    $cmd = 'vendor/bin/phpunit';
-    run(dockerize($cmd));
+    run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
 }
-
 
 #[AsTask(description: 'Refresh plugins list')]
-function shopware_plugin_refresh(): void
+function shopware_plugin_refresh(string $args = ''): void
 {
-    run(dockerize('bin/console plugin:refresh'));
+    run(dockerize(sprintf('%s %s plugin:refresh %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Install and activate a plugin (set SHOPWARE_PLUGIN env)')]
-function shopware_plugin_install_activate(): void
+#[AsTask(description: 'Install and activate plugin(s). Set SW_PLUGIN_NAMES (comma/space) or SHOPWARE_PLUGIN (compat).')]
+function shopware_plugin_install_activate(string $plugins, string $args = ''): void
 {
-    $plugin = getenv('SHOPWARE_PLUGIN') ?: '';
-    if ($plugin === '') {
-        run(dockerize('bin/console plugin:list'));
-
+    $plugins = preg_split('/[\s,]+/', trim((string) $plugins)) ?: [];
+    if ($plugins === [] || $plugins[0] === '') {
+        run(dockerize(sprintf('%s %s plugin:list', php(), sw_console_bin())));
         return;
     }
-    run(dockerize(sprintf('bin/console plugin:install --activate %s', escapeshellarg($plugin))));
+
+    foreach ($plugins as $p) {
+        run(dockerize(sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, escapeshellarg($p))));
+    }
 }
 
 #[AsTask(description: 'Compile themes')]
-function shopware_theme_compile(): void
+function shopware_theme_compile(string $args = ''): void
 {
-    run(dockerize('bin/console theme:compile'));
+    run(dockerize(sprintf('%s %s theme:compile %s', php(), sw_console_bin(), $args)));
 }
 
 #[AsTask(description: 'Run DB migrations (non-destructive)')]
-function shopware_migrate(): void
+function shopware_migrate(string $args = ''): void
 {
-    run(dockerize('bin/console database:migrate'));
+    run(dockerize(sprintf('%s %s database:migrate %s', php(), sw_console_bin(), $args)));
 }
 
 #[AsTask(description: 'Run DB migrations (destructive)')]
-function shopware_migrate_destructive(): void
+function shopware_migrate_destructive(string $args = ''): void
 {
-    run(dockerize('bin/console database:migrate-destructive'));
+    run(dockerize(sprintf('%s %s database:migrate-destructive %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Create admin user (env: SW_ADMIN_EMAIL, SW_ADMIN_PASSWORD)')]
-function shopware_admin_create(): void
+#[AsTask(description: 'Create admin user (env: SW_ADMIN_EMAIL, SW_ADMIN_PASSWORD, names/locale)')]
+function shopware_admin_create(string $email = 'admin@shopware.com', string $password = 'shopware', string $firstname = 'Admin', string $lastname = 'User', string $locale = 'en'): void
 {
-    $email = getenv('SW_ADMIN_EMAIL') ?: 'admin@example.com';
-    $password = getenv('SW_ADMIN_PASSWORD') ?: 'admin';
-    $first = getenv('SW_ADMIN_FIRSTNAME') ?: 'Admin';
-    $last = getenv('SW_ADMIN_LASTNAME') ?: 'User';
+    $localeArg = $locale !== '' ? sprintf('--locale=%s', escapeshellarg($locale)) : '';
+
     run(dockerize(sprintf(
-        'bin/console user:create %s --admin --password=%s --firstName=%s --lastName=%s',
+        '%s %s user:create %s --admin --password=%s --firstName=%s --lastName=%s %s',
+        php(),
+        sw_console_bin(),
         escapeshellarg($email),
         escapeshellarg($password),
-        escapeshellarg($first),
-        escapeshellarg($last)
+        escapeshellarg($firstname),
+        escapeshellarg($lastname),
+        $localeArg
     )));
+}
+
+#[AsTask(description: 'Proxy to bin/console with ARGS (env)')]
+function shopware_console(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s %s', php(), sw_console_bin(), $args)));
+}
+
+#[AsTask(description: 'Project setup (composite): composer install, system:install, migrate, plugin refresh/install, theme, optional admin')]
+function shopware_setup_full(string $plugins, bool $withAdmin): void
+{
+    composer_install();
+    shopware_system_install();
+    shopware_migrate();
+    shopware_migrate_destructive();
+    shopware_plugin_refresh();
+
+    if ($plugins !== '') {
+        shopware_plugin_install_activate($plugins);
+    }
+
+    shopware_theme_compile();
+
+    if ($withAdmin) {
+        shopware_admin_create();
+    }
+}
+
+#[AsTask(description: 'CI helper (build + tests) - composite')]
+function shopware_ci(): void
+{
+    shopware_build();
+    shopware_test();
 }
