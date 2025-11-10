@@ -19,8 +19,10 @@ During installation it asks which recipe to use and:
 
 ## Castor enable autocompletion
 
+To show how to enable autocompletion, run:
+
 ```bash
- castor completion zsh | sudo tee $fpath[1]/_castor # note: substitute zsh with your default shell (castor completion --help)
+castor completion --help
 ```
 
 Then reload your shell.
