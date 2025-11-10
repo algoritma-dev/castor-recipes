@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 use Castor\Attribute\AsTask;
 
-use function Castor\io;
 use function Castor\run;
 
 require_once __DIR__ . '/common.php';
+
+function wp_bin(): string
+{
+    return getenv('WP_BIN') ?: 'wp';
+}
+
+#[AsTask(description: 'Proxy to wp-cli with ARGS')]
+function wp_cli(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s', wp_bin(), $args)));
+}
 
 #[AsTask(description: 'Install dependencies and prepare WordPress (wp-cli)')]
 function wp_setup(): void
@@ -18,9 +28,9 @@ function wp_setup(): void
     }
 
     // Install WordPress via wp-cli if available
-    $downloadCmd = 'wp core download --force';
-    $configCmd = 'wp config create --dbname=${WP_DB_NAME:-wordpress} --dbuser=${WP_DB_USER:-root} --dbpass=${WP_DB_PASSWORD:-root} --dbhost=${WP_DB_HOST:-127.0.0.1} --skip-check';
-    $installCmd = 'wp core install --url=${WP_URL:-http://localhost} --title="WP Site" --admin_user=admin --admin_password=${WP_ADMIN_PASSWORD:-Admin123!} --admin_email=admin@example.com';
+    $downloadCmd = sprintf('%s core download --force', wp_bin());
+    $configCmd = sprintf('%s config create --dbname=${WP_DB_NAME:-wordpress} --dbuser=${WP_DB_USER:-root} --dbpass=${WP_DB_PASSWORD:-root} --dbhost=${WP_DB_HOST:-127.0.0.1} --skip-check', wp_bin());
+    $installCmd = sprintf('%s core install --url=${WP_URL:-http://localhost} --title="WP Site" --admin_user=admin --admin_password=${WP_ADMIN_PASSWORD:-Admin123!} --admin_email=admin@example.com', wp_bin());
 
     run(dockerize($downloadCmd));
     if (! file_exists('wp-config.php')) {
@@ -32,9 +42,9 @@ function wp_setup(): void
 #[AsTask(description: 'Update core, plugins and themes')]
 function wp_update_all(): void
 {
-    run(dockerize('wp core update'));
-    run(dockerize('wp plugin update --all'));
-    run(dockerize('wp theme update --all'));
+    wp_cli('core update');
+    wp_cli('plugin update --all');
+    wp_cli('theme update --all');
 }
 
 #[AsTask(description: 'Clean cache and build assets (if supported)')]
@@ -46,45 +56,35 @@ function wp_build(): void
     }
 }
 
-
 #[AsTask(description: 'Install and activate a plugin (set WP_PLUGIN env)')]
-function wp_plugin_install_activate(): void
+function wp_plugin_install_activate(string $plugin): void
 {
-    $plugin = getenv('WP_PLUGIN') ?: '';
-    if ($plugin === '') {
-        run(dockerize('wp plugin list'));
-
-        return;
-    }
-    run(dockerize(sprintf('wp plugin install %s --activate --force', escapeshellarg($plugin))));
+    run(dockerize(sprintf('%s plugin install %s --activate --force', wp_bin(), escapeshellarg($plugin))));
 }
 
 #[AsTask(description: 'Install and activate a theme (set WP_THEME env)')]
-function wp_theme_install_activate(): void
+function wp_theme_install_activate(string $theme = ''): void
 {
-    $theme = getenv('WP_THEME') ?: '';
     if ($theme === '') {
-        run(dockerize('wp theme list'));
+        wp_cli('theme list');
 
         return;
     }
-    run(dockerize(sprintf('wp theme install %s --activate --force', escapeshellarg($theme))));
+    run(dockerize(sprintf('%s theme install %s --activate --force', wp_bin(), escapeshellarg($theme))));
 }
 
 #[AsTask(description: 'Flush permalinks')]
 function wp_permalinks_flush(): void
 {
-    run(dockerize('wp rewrite flush --hard'));
+    wp_cli('rewrite flush --hard');
 }
 
 #[AsTask(description: 'Create an admin user (env: WP_ADMIN_USER, WP_ADMIN_PASS, WP_ADMIN_EMAIL)')]
-function wp_user_create_admin(): void
+function wp_user_create_admin(string $user = 'admin', string $pass = 'Admin123', string $email = 'admin@example.com'): void
 {
-    $user = getenv('WP_ADMIN_USER') ?: 'admin2';
-    $pass = getenv('WP_ADMIN_PASS') ?: 'Admin123!';
-    $email = getenv('WP_ADMIN_EMAIL') ?: 'admin2@example.com';
     run(dockerize(sprintf(
-        'wp user create %s %s --role=administrator --user_pass=%s',
+        '%s user create %s %s --role=administrator --user_pass=%s',
+        wp_bin(),
         escapeshellarg($user),
         escapeshellarg($email),
         escapeshellarg($pass)
@@ -92,39 +92,33 @@ function wp_user_create_admin(): void
 }
 
 #[AsTask(description: 'Database export (to file, set WP_DB_EXPORT default db.sql)')]
-function wp_db_export(): void
+function wp_db_export(string $dump): void
 {
-    $file = getenv('WP_DB_EXPORT') ?: 'db.sql';
-    run(dockerize(sprintf('wp db export %s', escapeshellarg($file))));
+    run(dockerize(sprintf('%s db export %s', wp_bin(), escapeshellarg($dump))));
 }
 
 #[AsTask(description: 'Database import (from file, set WP_DB_IMPORT)')]
-function wp_db_import(): void
+function wp_db_import(string $dump): void
 {
-    $file = getenv('WP_DB_IMPORT') ?: '';
-    if ($file === '') {
-        io()->write('Set WP_DB_IMPORT to the SQL file path');
-
-        return;
-    }
-    run(dockerize(sprintf('wp db import %s', escapeshellarg($file))));
+    run(dockerize(sprintf('%s db import %s', wp_bin(), escapeshellarg($dump))));
 }
 
 #[AsTask(description: 'Search-replace in DB (set WP_SR_FROM, WP_SR_TO)')]
-function wp_search_replace(): void
+function wp_search_replace(string $from, string $to): void
 {
-    $from = getenv('WP_SR_FROM') ?: '';
-    $to = getenv('WP_SR_TO') ?: '';
-    if ($from === '' || $to === '') {
-        io()->write('Set WP_SR_FROM and WP_SR_TO');
-
-        return;
-    }
-    run(dockerize(sprintf('wp search-replace %s %s --all-tables', escapeshellarg($from), escapeshellarg($to))));
+    run(dockerize(sprintf('%s search-replace %s %s --all-tables', wp_bin(), escapeshellarg($from), escapeshellarg($to))));
 }
 
 #[AsTask(description: 'Flush caches (if any caching plugin is present)')]
 function wp_cache_flush(): void
 {
-    run(dockerize('wp cache flush'));
+    wp_cli('cache flush');
+}
+
+#[AsTask(description: 'CI helper (update + optional build) - composite')]
+function wp_ci(): void
+{
+    wp_update_all();
+    wp_cache_flush();
+    wp_build();
 }

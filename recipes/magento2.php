@@ -49,9 +49,8 @@ function magento2_di_compile(): void
 }
 
 #[AsTask(description: 'Deploy static content (set M2_LOCALES env, default en_US)')]
-function magento2_static_deploy(): void
+function magento2_static_deploy(string $locales = 'en_US'): void
 {
-    $locales = getenv('M2_LOCALES') ?: 'en_US';
     run(dockerize(sprintf('php bin/magento setup:static-content:deploy -f %s', escapeshellarg($locales))));
 }
 
@@ -80,9 +79,8 @@ function magento2_indexer_status(): void
 }
 
 #[AsTask(description: 'Enable a module (set M2_MODULE env)')]
-function magento2_module_enable(): void
+function magento2_module_enable(string $module = ''): void
 {
-    $module = getenv('M2_MODULE') ?: '';
     if ($module === '') {
         run(dockerize('php bin/magento module:status'));
 
@@ -92,9 +90,8 @@ function magento2_module_enable(): void
 }
 
 #[AsTask(description: 'Disable a module (set M2_MODULE env)')]
-function magento2_module_disable(): void
+function magento2_module_disable(string $module = ''): void
 {
-    $module = getenv('M2_MODULE') ?: '';
     if ($module === '') {
         run(dockerize('php bin/magento module:status'));
 
@@ -119,4 +116,77 @@ function magento2_maintenance_disable(): void
 function magento2_cron_run(): void
 {
     run(dockerize('php bin/magento cron:run'));
+}
+
+// === Enhancements to match Symfony/Shopware richness ===
+function m2_console_bin(): string
+{
+    return getenv('M2_BIN') ?: 'bin/magento';
+}
+
+#[AsTask(description: 'Proxy to bin/magento with ARGS')]
+function magento2_console(string $args = ''): void
+{
+    run(dockerize(sprintf('%s %s %s', php(), m2_console_bin(), $args)));
+}
+
+#[AsTask(description: 'Switch to production mode and deploy static content (composite)')]
+function magento2_mode_production(string $locales = 'en_US'): void
+{
+    magento2_console('deploy:mode:set production');
+    magento2_console(sprintf('setup:static-content:deploy -f %s', escapeshellarg($locales)));
+    magento2_cache_flush();
+}
+
+#[AsTask(description: 'Deploy sample data packages')]
+function magento2_sampledata_deploy(): void
+{
+    magento2_console('sampledata:deploy');
+}
+
+#[AsTask(description: 'Apply setup upgrade after sample data')]
+function magento2_sampledata_upgrade(): void
+{
+    magento2_console('setup:upgrade');
+}
+
+#[AsTask(description: 'Set configuration value (path, value, scope, scope-code)')]
+function magento2_config_set(string $path, string $value, string $scope = 'default', string $scopeCode = ''): void
+{
+    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', escapeshellarg($scope)) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', escapeshellarg($scopeCode)) : '';
+    magento2_console(sprintf('config:set %s %s %s %s', escapeshellarg($path), escapeshellarg($value), $scopeArgs, $scopeCodeArgs));
+}
+
+#[AsTask(description: 'Get configuration value (path, scope, scope-code)')]
+function magento2_config_get(string $path, string $scope = '', string $scopeCode = ''): void
+{
+    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', escapeshellarg($scope)) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', escapeshellarg($scopeCode)) : '';
+    magento2_console(sprintf('config:show %s %s %s', escapeshellarg($path), $scopeArgs, $scopeCodeArgs));
+}
+
+#[AsTask(description: 'Tail Magento logs')]
+function magento2_logs_tail(string $file = 'var/log/system.log', string $lines = '200'): void
+{
+    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
+}
+
+#[AsTask(description: 'Project setup full (composite): composer install, setup:upgrade, di:compile, static deploy, cache flush, reindex')]
+function magento2_setup_full(): void
+{
+    composer_install();
+    magento2_setup_upgrade();
+    magento2_di_compile();
+    magento2_static_deploy();
+    magento2_cache_flush();
+    magento2_indexer_reindex();
+}
+
+#[AsTask(description: 'CI helper (compile + reindex + tests) - composite')]
+function magento2_ci(): void
+{
+    magento2_di_compile();
+    magento2_indexer_reindex();
+    magento2_test();
 }

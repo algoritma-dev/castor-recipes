@@ -44,11 +44,11 @@ vendor/bin/castor
 
 Examples of included tasks (not exhaustive):
 - Symfony: `sf_install`, `sf_serve`, `sf_serve_stop`, `sf_migrate`, `sf_migrate_diff`, `sf_migrate_fresh`, `sf_db_create`, `sf_db_drop`, `sf_db_reset`, `sf_fixtures_load`, `sf_cache_clear`, `sf_cache_warmup`, `sf_cache_clear_warmup`, `sf_assets_install`, `sf_lint_yaml`, `sf_lint_twig`, `sf_lint_container`, `sf_lint_all`, `sf_messenger_consume`, `sf_logs_tail`, `sf_test`, `sf_console`, `sf_setup`, `sf_ci`
-- Laravel: `laravel_install`, `laravel_serve`, `laravel_migrate`, `laravel_seed`, `laravel_migrate_seed`, `laravel_migrate_fresh`, `laravel_key_generate`, `laravel_cache`, `laravel_cache_clear_all`, `laravel_config_cache`, `laravel_route_cache`, `laravel_event_cache`, `laravel_test`, `laravel_queue`, `laravel_queue_restart`, `laravel_queue_listen`, `laravel_schedule_run`, `laravel_storage_link`, `laravel_tinker`
+- Laravel: `laravel_install`, `laravel_serve`, `laravel_migrate`, `laravel_seed`, `laravel_migrate_seed`, `laravel_migrate_fresh`, `laravel_key_generate`, `laravel_cache`, `laravel_cache_clear_all`, `laravel_config_cache`, `laravel_route_cache`, `laravel_event_cache`, `laravel_test`, `laravel_queue`, `laravel_queue_restart`, `laravel_queue_listen`, `laravel_schedule_run`, `laravel_storage_link`, `laravel_tinker`, `laravel_logs_tail`, `laravel_artisan`, `laravel_setup`, `laravel_ci`
 - Shopware: `shopware_install`, `shopware_system_install` (alias: `shopware_setup`), `shopware_cache_clear`, `shopware_build`, `shopware_storefront_build`, `shopware_migrate`, `shopware_migrate_destructive`, `shopware_plugin_refresh`, `shopware_plugin_install_activate`, `shopware_theme_compile`, `shopware_admin_create`, `shopware_test`, `shopware_console`, `shopware_setup_full`, `shopware_ci`
-- OroCommerce: `oro_setup`, `oro_build`, `oro_update`, `oro_cache_clear`, `oro_assets_build`, `oro_search_reindex`, `oro_mq_consume`, `oro_test`
-- Magento 2: `magento2_setup`, `magento2_setup_upgrade`, `magento2_dev`, `magento2_di_compile`, `magento2_static_deploy`, `magento2_cache_clean`, `magento2_cache_flush`, `magento2_indexer_reindex`, `magento2_indexer_status`, `magento2_module_enable`, `magento2_module_disable`, `magento2_maintenance_enable`, `magento2_maintenance_disable`, `magento2_cron_run`, `magento2_test`
-- WordPress: `wp_setup`, `wp_update_all`, `wp_build`, `wp_plugin_install_activate`, `wp_theme_install_activate`, `wp_permalinks_flush`, `wp_user_create_admin`, `wp_db_export`, `wp_db_import`, `wp_search_replace`, `wp_cache_flush`
+- OroCommerce: `oro_setup`, `oro_build`, `oro_update`, `oro_cache_clear`, `oro_assets_build`, `oro_search_reindex`, `oro_mq_consume`, `oro_test`, `oro_logs_tail`, `oro_console`, `oro_ci`
+- Magento 2: `magento2_setup`, `magento2_setup_upgrade`, `magento2_dev`, `magento2_di_compile`, `magento2_static_deploy`, `magento2_cache_clean`, `magento2_cache_flush`, `magento2_indexer_reindex`, `magento2_indexer_status`, `magento2_module_enable`, `magento2_module_disable`, `magento2_maintenance_enable`, `magento2_maintenance_disable`, `magento2_cron_run`, `magento2_console`, `magento2_mode_production`, `magento2_sampledata_deploy`, `magento2_sampledata_upgrade`, `magento2_config_set`, `magento2_config_get`, `magento2_logs_tail`, `magento2_setup_full`, `magento2_ci`, `magento2_test`
+- WordPress: `wp_setup`, `wp_update_all`, `wp_build`, `wp_plugin_install_activate`, `wp_theme_install_activate`, `wp_permalinks_flush`, `wp_user_create_admin`, `wp_db_export`, `wp_db_import`, `wp_search_replace`, `wp_cache_flush`, `wp_cli`, `wp_ci`
 
 Run a task, for example:
 
@@ -250,3 +250,95 @@ Note: Workflows are not yet included in this repository. Contributions are welco
 ## License
 
 MIT
+
+
+## Laravel recipe: parameterization
+All Laravel tasks avoid hardcoded binaries and allow customization via environment variables:
+
+- Binaries
+  - `PHP_BIN` (default: `php`)
+  - `PHPUNIT_BIN` (default: `vendor/bin/phpunit` if present, otherwise `bin/phpunit`)
+  - `COMPOSER_BIN` (default: `composer`)
+  - `LARAVEL_ARTISAN` (default: `artisan`)
+
+- Generic args and variables
+  - `PHPUNIT_ARGS`
+  - `LARAVEL_LOG_FILE` (default: `storage/logs/laravel.log`)
+  - `LARAVEL_SETUP_WITH_SEED` = `1|true`
+
+- Helpers
+  - Use `laravel_artisan` to proxy arbitrary artisan commands with `ARGS` if desired.
+
+### Examples
+```bash
+# Proxy arbitrary artisan command
+ARGS="cache:clear" vendor/bin/castor laravel_artisan
+
+# One-shot setup with seeding
+LARAVEL_SETUP_WITH_SEED=1 vendor/bin/castor laravel_setup
+
+# Tail logs
+vendor/bin/castor laravel_logs_tail
+```
+
+## Magento 2 recipe: parameterization
+
+- Binaries
+  - `PHP_BIN` (default: `php`)
+  - `M2_BIN` (default: `bin/magento`)
+  - `PHPUNIT_BIN` (default: `vendor/bin/phpunit` if present, otherwise `bin/phpunit`)
+  - `COMPOSER_BIN` (default: `composer`)
+
+- Generic args and variables
+  - `M2_LOCALES` (default: `en_US` for static deploy)
+  - `M2_MODULE` (used by enable/disable tasks)
+  - `M2_LOG_FILE` (default: `var/log/system.log`)
+
+### Examples
+```bash
+# Console proxy
+ARGS="cache:status" vendor/bin/castor magento2_console
+
+# Production mode helper
+M2_LOCALES="en_US it_IT" vendor/bin/castor magento2_mode_production
+
+# Sample data then upgrade
+vendor/bin/castor magento2_sampledata_deploy
+vendor/bin/castor magento2_sampledata_upgrade
+```
+
+## OroCommerce recipe: parameterization
+
+- Binaries
+  - `PHP_BIN` (default: `php`)
+  - `ORO_CONSOLE` (default: `bin/console`)
+
+- Generic args and variables
+  - `ORO_LOG_FILE` (default: `var/log/$APP_ENV.log`)
+
+### Examples
+```bash
+# Proxy bin/console
+ARGS="oro:check-requirements" vendor/bin/castor oro_console
+
+# Full setup with demo data
+vendor/bin/castor oro_setup --withDemoData=1
+```
+
+## WordPress recipe: parameterization
+
+- Binaries
+  - `WP_BIN` (default: `wp`)
+
+- Generic args and variables
+  - `WP_DB_NAME`, `WP_DB_USER`, `WP_DB_PASSWORD`, `WP_DB_HOST` for config creation
+  - `WP_URL`, `WP_ADMIN_PASSWORD` for installation
+
+### Examples
+```bash
+# Proxy wp-cli
+ARGS="plugin list" vendor/bin/castor wp_cli
+
+# Update everything and build assets
+vendor/bin/castor wp_ci
+```
