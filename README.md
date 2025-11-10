@@ -53,21 +53,7 @@ If the file already exists, instructions will be printed to add the `require` li
 List available tasks:
 
 ```bash
-vendor/bin/castor
-```
-
-Examples of included tasks (not exhaustive):
-- Symfony: `sf_install`, `sf_serve`, `sf_serve_stop`, `sf_migrate`, `sf_migrate_diff`, `sf_migrate_fresh`, `sf_db_create`, `sf_db_drop`, `sf_db_reset`, `sf_fixtures_load`, `sf_cache_clear`, `sf_cache_warmup`, `sf_cache_clear_warmup`, `sf_assets_install`, `sf_lint_yaml`, `sf_lint_twig`, `sf_lint_container`, `sf_lint_all`, `sf_messenger_consume`, `sf_logs_tail`, `sf_test`, `sf_console`, `sf_setup`, `sf_ci`
-- Laravel: `laravel_install`, `laravel_serve`, `laravel_migrate`, `laravel_seed`, `laravel_migrate_seed`, `laravel_migrate_fresh`, `laravel_key_generate`, `laravel_cache`, `laravel_cache_clear_all`, `laravel_config_cache`, `laravel_route_cache`, `laravel_event_cache`, `laravel_test`, `laravel_queue`, `laravel_queue_restart`, `laravel_queue_listen`, `laravel_schedule_run`, `laravel_storage_link`, `laravel_tinker`, `laravel_logs_tail`, `laravel_artisan`, `laravel_setup`, `laravel_ci`
-- Shopware: `shopware_install`, `shopware_system_install` (alias: `shopware_setup`), `shopware_cache_clear`, `shopware_build`, `shopware_storefront_build`, `shopware_migrate`, `shopware_migrate_destructive`, `shopware_plugin_refresh`, `shopware_plugin_install_activate`, `shopware_theme_compile`, `shopware_admin_create`, `shopware_test`, `shopware_console`, `shopware_setup_full`, `shopware_ci`
-- OroCommerce: `oro_setup`, `oro_build`, `oro_update`, `oro_cache_clear`, `oro_assets_build`, `oro_search_reindex`, `oro_mq_consume`, `oro_test`, `oro_logs_tail`, `oro_console`, `oro_ci`
-- Magento 2: `magento2_setup`, `magento2_setup_upgrade`, `magento2_dev`, `magento2_di_compile`, `magento2_static_deploy`, `magento2_cache_clean`, `magento2_cache_flush`, `magento2_indexer_reindex`, `magento2_indexer_status`, `magento2_module_enable`, `magento2_module_disable`, `magento2_maintenance_enable`, `magento2_maintenance_disable`, `magento2_cron_run`, `magento2_console`, `magento2_mode_production`, `magento2_sampledata_deploy`, `magento2_sampledata_upgrade`, `magento2_config_set`, `magento2_config_get`, `magento2_logs_tail`, `magento2_setup_full`, `magento2_ci`, `magento2_test`
-- WordPress: `wp_setup`, `wp_update_all`, `wp_build`, `wp_plugin_install_activate`, `wp_theme_install_activate`, `wp_permalinks_flush`, `wp_user_create_admin`, `wp_db_export`, `wp_db_import`, `wp_search_replace`, `wp_cache_flush`, `wp_cli`, `wp_ci`
-
-Run a task, for example:
-
-```bash
-vendor/bin/castor sf_install
+castor list
 ```
 
 ## Running in Docker (optional)
@@ -81,13 +67,13 @@ Examples:
 
 ```bash
 # Local execution (default)
-vendor/bin/castor sf_test
+castor sf_test
 
 # Using Docker Compose (service "php")
-CASTOR_DOCKER=1 DOCKER_SERVICE=php vendor/bin/castor sf_test
+CASTOR_DOCKER=1 DOCKER_SERVICE=php castor sf_test
 
 # Using an alternative compose file
-CASTOR_DOCKER=1 DOCKER_COMPOSE_FILE=docker/docker-compose.yml vendor/bin/castor laravel_test
+CASTOR_DOCKER=1 DOCKER_COMPOSE_FILE=docker/docker-compose.yml castor laravel_test
 ```
 
 ## Symfony recipe: parameterization
@@ -130,25 +116,25 @@ All Symfony tasks avoid hardcoded binaries and allow customization via environme
 ### Examples
 ```bash
 # Use a custom console path
-SF_CONSOLE=bin/cli vendor/bin/castor sf_cache_clear
+SF_CONSOLE=bin/cli castor sf_cache_clear
 
 # Forward options to phpunit
-PHPUNIT_ARGS="-c phpunit.xml.dist --testsuite unit" vendor/bin/castor sf_test
+PHPUNIT_ARGS="-c phpunit.xml.dist --testsuite unit" castor sf_test
 
 # Run messenger with custom transports and workers
-SF_TRANSPORTS=async_priority SF_MESSENGER_ARGS="--time-limit=600 --limit=50" vendor/bin/castor sf_messenger_consume
+SF_TRANSPORTS=async_priority SF_MESSENGER_ARGS="--time-limit=600 --limit=50" castor sf_messenger_consume
 
 # One-shot full setup with fixtures
-SF_SETUP_WITH_FIXTURES=1 vendor/bin/castor sf_setup
+SF_SETUP_WITH_FIXTURES=1 castor sf_setup
 
 # Reset database with fixtures and re-run migrations
-SF_RESET_WITH_FIXTURES=true vendor/bin/castor sf_db_reset
+SF_RESET_WITH_FIXTURES=true castor sf_db_reset
 
 # Fresh migrations from scratch
-vendor/bin/castor sf_migrate_fresh
+castor sf_migrate_fresh
 
 # All lints at once
-vendor/bin/castor sf_lint_all
+castor sf_lint_all
 ```
 
 ## Shopware 6 recipe: parameterization
@@ -189,25 +175,25 @@ All Shopware tasks avoid hardcoded binaries and allow customization via environm
 ### Examples
 ```bash
 # Install dependencies (custom Composer args)
-COMPOSER_ARGS="install --no-dev" vendor/bin/castor shopware_install
+COMPOSER_ARGS="install --no-dev" castor shopware_install
 
 # System install with custom flags
-SW_INSTALL_ARGS="--create-database --force --basic-setup --drop-database" vendor/bin/castor shopware_system_install
+SW_INSTALL_ARGS="--create-database --force --basic-setup --drop-database" castor shopware_system_install
 
 # Build with storefront build enabled
-SW_BUILD_WITH_STOREFRONT_BUILD=1 vendor/bin/castor shopware_build
+SW_BUILD_WITH_STOREFRONT_BUILD=1 castor shopware_build
 
 # Install and activate multiple plugins
-SW_PLUGIN_NAMES="SwagPayPal, SwagLanguagePack" vendor/bin/castor shopware_plugin_install_activate
+SW_PLUGIN_NAMES="SwagPayPal, SwagLanguagePack" castor shopware_plugin_install_activate
 
 # Create admin user with locale
-SW_ADMIN_EMAIL=admin@example.com SW_ADMIN_PASSWORD=secret SW_ADMIN_LOCALE=it-IT vendor/bin/castor shopware_admin_create
+SW_ADMIN_EMAIL=admin@example.com SW_ADMIN_PASSWORD=secret SW_ADMIN_LOCALE=it-IT castor shopware_admin_create
 
 # One-shot full setup
-SW_SETUP_WITH_ADMIN=1 SW_PLUGIN_NAMES="MyPlugin" vendor/bin/castor shopware_setup_full
+SW_SETUP_WITH_ADMIN=1 SW_PLUGIN_NAMES="MyPlugin" castor shopware_setup_full
 
 # Proxy arbitrary console command
-ARGS="cache:clear --no-warmup" vendor/bin/castor shopware_console
+ARGS="cache:clear --no-warmup" castor shopware_console
 ```
 
 ## Adding multiple recipes
@@ -286,13 +272,13 @@ All Laravel tasks avoid hardcoded binaries and allow customization via environme
 ### Examples
 ```bash
 # Proxy arbitrary artisan command
-ARGS="cache:clear" vendor/bin/castor laravel_artisan
+ARGS="cache:clear" castor laravel_artisan
 
 # One-shot setup with seeding
-LARAVEL_SETUP_WITH_SEED=1 vendor/bin/castor laravel_setup
+LARAVEL_SETUP_WITH_SEED=1 castor laravel_setup
 
 # Tail logs
-vendor/bin/castor laravel_logs_tail
+castor laravel_logs_tail
 ```
 
 ## Magento 2 recipe: parameterization
@@ -311,14 +297,14 @@ vendor/bin/castor laravel_logs_tail
 ### Examples
 ```bash
 # Console proxy
-ARGS="cache:status" vendor/bin/castor magento2_console
+ARGS="cache:status" castor magento2_console
 
 # Production mode helper
-M2_LOCALES="en_US it_IT" vendor/bin/castor magento2_mode_production
+M2_LOCALES="en_US it_IT" castor magento2_mode_production
 
 # Sample data then upgrade
-vendor/bin/castor magento2_sampledata_deploy
-vendor/bin/castor magento2_sampledata_upgrade
+castor magento2_sampledata_deploy
+castor magento2_sampledata_upgrade
 ```
 
 ## OroCommerce recipe: parameterization
@@ -333,10 +319,10 @@ vendor/bin/castor magento2_sampledata_upgrade
 ### Examples
 ```bash
 # Proxy bin/console
-ARGS="oro:check-requirements" vendor/bin/castor oro_console
+ARGS="oro:check-requirements" castor oro_console
 
 # Full setup with demo data
-vendor/bin/castor oro_setup --withDemoData=1
+castor oro_setup --withDemoData=1
 ```
 
 ## WordPress recipe: parameterization
@@ -351,8 +337,8 @@ vendor/bin/castor oro_setup --withDemoData=1
 ### Examples
 ```bash
 # Proxy wp-cli
-ARGS="plugin list" vendor/bin/castor wp_cli
+ARGS="plugin list" castor wp_cli
 
 # Update everything and build assets
-vendor/bin/castor wp_ci
+castor wp_ci
 ```

@@ -9,7 +9,7 @@ use function Castor\run;
 require_once __DIR__ . '/common.php';
 
 #[AsTask(description: 'Pre commit code analysis')]
-function pre_commit($file = 'bin/precommit'): void
+function pre_commit(string $file = 'bin/precommit'): void
 {
     $file = \Castor\Helper\PathHelper::getRoot() . '/' . $file;
     if (is_file($file) && is_executable($file)) {

@@ -19,7 +19,7 @@ function env_value(string $key, mixed $default = null, ?string $path = null): mi
         $dotenvLoaded = true;
     }
 
-    return array_key_exists($key, $_SERVER) ? $_SERVER[$key] : $default;
+    return (array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
 }
 
 /**
