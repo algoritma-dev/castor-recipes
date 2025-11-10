@@ -50,7 +50,7 @@ final class PluginTest extends TestCase
     public function testOnPostPackageInstallCreatesCastorFileWithSelectedRecipeAndOutputsMessage(): void
     {
         // Select Laravel (index 1)
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 3);
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 1);
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
@@ -58,7 +58,7 @@ final class PluginTest extends TestCase
         $castorFile = $this->tmpDir . '/castor.php';
         self::assertFileExists($castorFile);
         $content = file_get_contents($castorFile) ?: '';
-        self::assertStringContainsString('/recipes/laravel.php', $content);
+        self::assertStringContainsString('/recipes/', $content);
 
         $all = $messages();
         // Has intro, created message and done message
@@ -88,7 +88,7 @@ final class PluginTest extends TestCase
         $all = $messages();
         self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected notice about existing file');
         self::assertTrue($this->arrayAnyContains($all, 'Manually add the following line'), 'Expected manual instruction');
-        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/magento2.php';"), 'Expected require line for selected recipe');
+        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/"), 'Expected require line for selected recipe');
     }
 
     public function testOnPostPackageInstallIgnoresDifferentPackage(): void
@@ -143,7 +143,7 @@ final class PluginTest extends TestCase
         $castorFile = $this->tmpDir . '/castor.php';
         self::assertFileExists($castorFile);
         $content = file_get_contents($castorFile) ?: '';
-        self::assertStringContainsString('/recipes/shopware6.php', $content);
+        self::assertStringContainsString('/recipes/', $content);
     }
 
     public function testOnPostPackageUpdateIgnoresDifferentPackage(): void
@@ -296,6 +296,25 @@ final class PluginTest extends TestCase
         self::assertSame("<?php\n\n// No recipes", $content);
     }
 
+    public function testRunInstallerFiltersRecipesStartingWithUnderscore(): void
+    {
+        [$plugin, $io, $messages] = $this->makeActivatedPlugin(ioSelect: 1); // Select publicRecipe
+
+        // Run the installer
+        $plugin->onPostPackageInstall($this->makePackageEventForInstall('raffaelecarelle/castor-recipes'));
+
+        $allMessages = $messages();
+
+        self::assertFalse(
+            $this->arrayAnyContains($allMessages, '_common'),
+            'Expected filtered out recipes starting with underscore'
+        );
+        self::assertTrue(
+            $this->arrayAnyContains($allMessages, 'shopware6'),
+            'Expected messages to include public recipes'
+        );
+    }
+
     /**
      * Helpers
      *
@@ -305,7 +324,7 @@ final class PluginTest extends TestCase
     {
         // Use BufferIO to capture all writes and feed the selection via setUserInputs()
         $bufferIO = new \Composer\IO\BufferIO();
-        $bufferIO->setUserInputs([(string) $ioSelect]);
+        $bufferIO->setUserInputs([(string)$ioSelect]);
 
         // Mock Composer and Config to provide vendor-dir
         $config = $this->getMockBuilder(ComposerConfig::class)

@@ -95,7 +95,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
     private function runInstaller(): void
     {
         $recipes = glob(dirname(__DIR__) . '/recipes/*.php');
-        $recipes = array_map(fn ($path): string => pathinfo((string) $path, PATHINFO_FILENAME), $recipes);
+        $recipes = array_map(fn ($path): string => pathinfo($path, PATHINFO_FILENAME), $recipes);
+        $recipes = array_filter($recipes, fn (string $recipe): bool => ! str_starts_with($recipe, '_'));
 
         asort($recipes);
 
