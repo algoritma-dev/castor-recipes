@@ -18,7 +18,7 @@ function dockerize(string $command, ?string $workdir = null): string
 {
     $useDocker = getenv('CASTOR_DOCKER') === '1' || getenv('CASTOR_DOCKER') === 'true';
 
-    if (!$useDocker) {
+    if (! $useDocker) {
         return $command;
     }
 
@@ -77,4 +77,3 @@ function composer_update(string $composerArgs = ''): void
     $composerCmd = getenv('COMPOSER_BIN') ?: 'composer';
     run(dockerize(sprintf('%s %s %s', $composerCmd, 'update', $composerArgs)));
 }
-

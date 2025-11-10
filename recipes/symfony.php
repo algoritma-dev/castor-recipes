@@ -8,8 +8,14 @@ use function Castor\run;
 
 require_once __DIR__ . '/common.php';
 
-function sf_console_bin(): string { return getenv('SF_CONSOLE') ?: 'bin/console'; }
-function sf_symfony_bin(): string { return getenv('SYMFONY_BIN') ?: 'symfony'; }
+function sf_console_bin(): string
+{
+    return getenv('SF_CONSOLE') ?: 'bin/console';
+}
+function sf_symfony_bin(): string
+{
+    return getenv('SYMFONY_BIN') ?: 'symfony';
+}
 
 #[AsTask(description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)')]
 function sf_serve(string $flags = '-d'): void

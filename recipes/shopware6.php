@@ -8,7 +8,10 @@ use function Castor\run;
 
 require_once __DIR__ . '/common.php';
 
-function sw_console_bin(): string { return getenv('SW_CONSOLE') ?: 'bin/console'; }
+function sw_console_bin(): string
+{
+    return getenv('SW_CONSOLE') ?: 'bin/console';
+}
 
 #[AsTask(description: 'Install dependencies and prepare Shopware (system:install)', aliases: ['shopware_setup'])]
 function shopware_system_install(string $args = '--create-database --basic-setup --force'): void
@@ -62,14 +65,15 @@ function shopware_plugin_refresh(string $args = ''): void
 #[AsTask(description: 'Install and activate plugin(s). Set SW_PLUGIN_NAMES (comma/space) or SHOPWARE_PLUGIN (compat).')]
 function shopware_plugin_install_activate(string $plugins, string $args = ''): void
 {
-    $plugins = preg_split('/[\s,]+/', trim((string) $plugins)) ?: [];
+    $plugins = preg_split('/[\s,]+/', trim($plugins)) ?: [];
     if ($plugins === [] || $plugins[0] === '') {
         run(dockerize(sprintf('%s %s plugin:list', php(), sw_console_bin())));
+
         return;
     }
 
-    foreach ($plugins as $p) {
-        run(dockerize(sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, escapeshellarg($p))));
+    foreach ($plugins as $plugin) {
+        run(dockerize(sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, escapeshellarg($plugin))));
     }
 }
 
