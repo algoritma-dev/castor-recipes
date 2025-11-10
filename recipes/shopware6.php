@@ -10,7 +10,7 @@ require_once __DIR__ . '/common.php';
 
 function sw_console_bin(): string
 {
-    return getenv('SW_CONSOLE') ?: 'bin/console';
+    return (string) env_value('SW_CONSOLE', 'bin/console');
 }
 
 #[AsTask(description: 'Install dependencies and prepare Shopware (system:install)', aliases: ['shopware_setup'])]

@@ -10,11 +10,11 @@ require_once __DIR__ . '/common.php';
 
 function sf_console_bin(): string
 {
-    return getenv('SF_CONSOLE') ?: 'bin/console';
+    return (string) env_value('SF_CONSOLE', 'bin/console');
 }
 function sf_symfony_bin(): string
 {
-    return getenv('SYMFONY_BIN') ?: 'symfony';
+    return (string) env_value('SYMFONY_BIN', 'symfony');
 }
 
 #[AsTask(description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)')]
@@ -143,8 +143,8 @@ function sf_messenger_consume(string $transports = 'async', string $args = '--ti
 #[AsTask(description: 'Tail Symfony logs')]
 function sf_logs_tail(string $lines = '200'): void
 {
-    $env = getenv('APP_ENV') ?: 'dev';
-    $file = getenv('SF_LOG_FILE') ?: sprintf('var/log/%s.log', $env);
+    $env = (string) env_value('APP_ENV', 'dev');
+    $file = (string) env_value('SF_LOG_FILE', sprintf('var/log/%s.log', $env));
     run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
 }
 
@@ -155,12 +155,12 @@ function sf_console(string $args = ''): void
 }
 
 #[AsTask(description: 'Project setup (composite): install, db create, migrate, fixtures, cache warmup, assets')]
-function sf_setup(): void
+function sf_setup(bool $fixtures = true): void
 {
     composer_install();
     sf_db_create();
     sf_migrate();
-    if (getenv('SF_SETUP_WITH_FIXTURES') === '1' || getenv('SF_SETUP_WITH_FIXTURES') === 'true') {
+    if ($fixtures) {
         sf_fixtures_load();
     }
     sf_cache_warmup();

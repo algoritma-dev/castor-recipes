@@ -8,8 +8,22 @@ During installation it asks which recipe to use and:
 ## Requirements
 - PHP >= 8.2
 - Composer 2
-- [jolicode/castor](https://github.com/jolicode/Castor) (installed as a dependency of this plugin)
+- [jolicode/castor](https://github.com/jolicode/Castor) (Below for quick installation)
 - Optional Docker (to run tasks in containers)
+
+## Castor installation
+
+```bash
+ curl "https://castor.jolicode.com/install" | bash -s -- --static
+```
+
+## Castor enable autocompletion
+
+```bash
+ castor completion zsh | sudo tee $fpath[1]/_castor # note: substitute zsh with your default shell (castor completion --help)
+```
+
+Then reload your shell.
 
 ## Supported Platforms/Frameworks
 - Symfony (`recipes/symfony.php`)

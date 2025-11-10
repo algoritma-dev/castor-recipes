@@ -10,7 +10,7 @@ require_once __DIR__ . '/common.php';
 
 function wp_bin(): string
 {
-    return getenv('WP_BIN') ?: 'wp';
+    return (string) env_value('WP_BIN', 'wp');
 }
 
 #[AsTask(description: 'Proxy to wp-cli with ARGS')]

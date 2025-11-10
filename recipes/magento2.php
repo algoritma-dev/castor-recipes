@@ -121,7 +121,7 @@ function magento2_cron_run(): void
 // === Enhancements to match Symfony/Shopware richness ===
 function m2_console_bin(): string
 {
-    return getenv('M2_BIN') ?: 'bin/magento';
+    return (string) env_value('M2_BIN', 'bin/magento');
 }
 
 #[AsTask(description: 'Proxy to bin/magento with ARGS')]
