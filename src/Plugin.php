@@ -168,7 +168,7 @@ PHP;
             $this->io->write('');
             foreach ($selectedRecipes as $selectedRecipe) {
                 $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
-                $this->io->write(sprintf("    require __DIR__ . '/%s';", $relativeRequirePath));
+                $this->io->write('    require __DIR__ . ' . "'/{$relativeRequirePath}';");
             }
             $this->io->write('');
         }
