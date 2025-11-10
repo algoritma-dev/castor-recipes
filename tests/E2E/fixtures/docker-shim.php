@@ -11,7 +11,7 @@
 
 $log = getenv('SHIM_DOCKER_LOG') ?: (getcwd().'/docker-shim.log');
 $args = array_slice($argv, 1);
-$line = 'docker '.implode(' ', array_map(static fn(string $a): string => $a, $args));
+$line = 'docker '.implode(' ', array_map(static fn (string $a): string => $a, $args));
 file_put_contents($log, $line."\n", FILE_APPEND);
 
 // If not a docker compose call, just succeed

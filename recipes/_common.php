@@ -17,8 +17,18 @@ function env_value(string $key, mixed $default = null, ?string $path = null): mi
 {
     static $dotenvLoaded = false;
     if ($dotenvLoaded === false) {
-        // Load .env only once to avoid repeated parsing and memory usage
-        load_dot_env($path);
+        if ($path === null) {
+            $pathsCandidate = ['.env', '.env-app', '.env.example'];
+            foreach ($pathsCandidate as $pathCandidate) {
+                if (is_file(getcwd() . '/' . $pathCandidate)) {
+                    $path = getcwd() . '/' . $pathCandidate;
+                    load_dot_env($path);
+                }
+            }
+        } else {
+            load_dot_env($path);
+        }
+
         $dotenvLoaded = true;
     }
 
