@@ -17,10 +17,13 @@ final class PluginTest extends TestCase
 {
     private string $tmpDir;
 
+    private ?\Symfony\Component\Filesystem\Filesystem $filesystem;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->tmpDir = sys_get_temp_dir() . '/castor_recipes_plugin_test_' . bin2hex(random_bytes(4));
+        $this->filesystem = new \Symfony\Component\Filesystem\Filesystem();
         // project root
         mkdir($this->tmpDir, 0777, true);
         // vendor dir inside project root
@@ -31,6 +34,7 @@ final class PluginTest extends TestCase
     protected function tearDown(): void
     {
         $this->removeDir($this->tmpDir);
+        $this->filesystem = null;
         parent::tearDown();
     }
 
@@ -46,7 +50,7 @@ final class PluginTest extends TestCase
     public function testOnPostPackageInstallCreatesCastorFileWithSelectedRecipeAndOutputsMessage(): void
     {
         // Select Laravel (index 1)
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 1);
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 2);
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
@@ -72,7 +76,7 @@ final class PluginTest extends TestCase
         $original = file_get_contents($castorFile);
 
         // Select Magento2 (index 4)
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 4);
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 5);
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
@@ -131,7 +135,7 @@ final class PluginTest extends TestCase
 
     public function testOnPostPackageUpdateCreatesCastorFileToo(): void
     {
-        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 2); // shopware6
+        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 3); // shopware6
 
         $packageEvent = $this->makePackageEventForUpdate('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageUpdate($packageEvent);
@@ -184,17 +188,22 @@ final class PluginTest extends TestCase
         self::assertSame('', trim($all));
     }
 
-    public function testInvalidChoiceFallsBackToSymfonyRecipe(): void
+    public function testRunInstallerDoesNotOverwriteExistingCastorFile(): void
     {
-        // Force IO->select to return an out-of-range index
-        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 999);
+        $castorFile = $this->tmpDir . '/castor.php';
+        file_put_contents($castorFile, "<?php\n\n// Pre-existing content");
+
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 2); // Shopware6
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
-        $castorFile = $this->tmpDir . '/castor.php';
-        $content = file_get_contents($castorFile) ?: '';
-        self::assertStringContainsString('/recipes/symfony.php', $content);
+        $content = file_get_contents($castorFile);
+        self::assertSame("<?php\n\n// Pre-existing content", $content, 'Expected castor.php content to remain unchanged');
+
+        $all = $messages();
+        self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected message about existing file');
+        self::assertTrue($this->arrayAnyContains($all, 'Manually add the following lines'), 'Expected manual instruction to add recipes');
     }
 
     public function testCreatedMessageUsesPathRelativeToCwd(): void
@@ -218,6 +227,73 @@ final class PluginTest extends TestCase
         $createdMessages = array_values(array_filter($all, fn (string $m): bool => str_contains($m, 'Created') && str_contains($m, 'castor.php')));
         self::assertNotEmpty($createdMessages, 'Expected a created message mentioning castor.php');
         self::assertFalse(str_contains($createdMessages[0], $this->tmpDir), 'Path in created message should be relative, not absolute');
+    }
+
+    public function testUninstallRemovesRecipeRequire(): void
+    {
+        $castorFile = $this->tmpDir . '/castor.php';
+
+        // Simulate existing castor.php with recipe require
+        $this->filesystem->dumpFile($castorFile, "<?php\n\nrequire __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';");
+
+        $composer = $this->createMock(Composer::class);
+        $config = $this->getMockBuilder(ComposerConfig::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['get'])
+            ->getMock();
+        $config->method('get')->with('vendor-dir')->willReturn($this->tmpDir . '/vendor');
+        $composer->method('getConfig')->willReturn($config);
+
+        $io = $this->createMock(IOInterface::class);
+        $io->expects(self::once())->method('write')->with('<info>Removed</info> recipe requires from castor.php');
+
+        $plugin = new Plugin();
+        $plugin->uninstall($composer, $io);
+
+        $content = file_get_contents($castorFile);
+        self::assertStringNotContainsString('raffaelecarelle/castor-recipes/recipes/symfony.php', $content);
+    }
+
+    public function testUninstallDoesNothingIfCastorFileDoesNotExist(): void
+    {
+        $composer = $this->createMock(Composer::class);
+        $config = $this->getMockBuilder(ComposerConfig::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['get'])
+            ->getMock();
+        $config->method('get')->with('vendor-dir')->willReturn($this->tmpDir . '/vendor');
+        $composer->method('getConfig')->willReturn($config);
+
+        $io = $this->createMock(IOInterface::class);
+        $io->expects(self::never())->method('write');
+
+        $plugin = new Plugin();
+        $plugin->uninstall($composer, $io);
+    }
+
+    public function testUninstallDoesNothingIfCastorFileUnchanged(): void
+    {
+        $castorFile = $this->tmpDir . '/castor.php';
+
+        // Simulate an unrelated castor.php file
+        $this->filesystem->dumpFile($castorFile, "<?php\n\n// No recipes");
+
+        $composer = $this->createMock(Composer::class);
+        $config = $this->getMockBuilder(ComposerConfig::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['get'])
+            ->getMock();
+        $config->method('get')->with('vendor-dir')->willReturn($this->tmpDir . '/vendor');
+        $composer->method('getConfig')->willReturn($config);
+
+        $io = $this->createMock(IOInterface::class);
+        $io->expects(self::never())->method('write');
+
+        $plugin = new Plugin();
+        $plugin->uninstall($composer, $io);
+
+        $content = file_get_contents($castorFile);
+        self::assertSame("<?php\n\n// No recipes", $content);
     }
 
     /**
