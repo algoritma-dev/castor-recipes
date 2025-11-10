@@ -8,7 +8,7 @@ use function Castor\run;
 
 require_once __DIR__ . '/_common.php';
 
-#[AsTask(description: 'Pre commit code analysis')]
+#[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
 function pre_commit(string $file = 'bin/precommit'): void
 {
     $file = dirname(\Castor\Helper\PathHelper::getRoot()) . '/' . $file;
@@ -34,25 +34,25 @@ function pre_commit(string $file = 'bin/precommit'): void
     }
 }
 
-#[AsTask(description: 'PHP CS Fixer')]
+#[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
 function php_cs_fixer(bool $dryRun = false, string $files = ''): void
 {
     run(dockerize(sprintf('./bin/php-cs-fixer fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
-#[AsTask(description: 'PHP Rector')]
+#[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function rector(bool $dryRun = false, string $args = ''): void
 {
     run(dockerize(sprintf('./bin/rector %s %s', $dryRun ? '--dry-run' : '', $args)));
 }
 
-#[AsTask(description: 'PHP Rector')]
+#[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function phpstan(string $args = ''): void
 {
     run(dockerize(sprintf('./bin/phpstan %s', $args)));
 }
 
-#[AsTask(description: 'Debug phpunit test')]
+#[AsTask(description: 'Debug phpunit test', namespace: 'qa')]
 function test_debug(
     ?string $config = null,
     ?string $filter = null,
@@ -64,7 +64,7 @@ function test_debug(
     run(dockerize(sprintf('bin/simple-phpunit %s', $params)));
 }
 
-#[AsTask(description: 'Exec JS tests in watch mode')]
+#[AsTask(description: 'Exec JS tests in watch mode', namespace: 'qa')]
 function test_watch(string $prefix = ''): void
 {
     $command = 'npm run test-watch';
@@ -75,7 +75,7 @@ function test_watch(string $prefix = ''): void
     run(dockerize($command));
 }
 
-#[AsTask(description: 'Run all tests (PHPUnit and JS)')]
+#[AsTask(description: 'Run all tests (PHPUnit and JS)', namespace: 'qa')]
 function tests(string $args = ''): void
 {
     run(dockerize(sprintf('bin/phpunit %s', $args)));

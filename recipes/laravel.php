@@ -8,156 +8,156 @@ use function Castor\run;
 
 require_once __DIR__ . '/_common.php';
 
-function laravel_artisan_bin(): string
+function artisan_bin(): string
 {
     return 'artisan';
 }
 
-#[AsTask(description: 'Proxy to artisan with ARGS')]
-function laravel_artisan(string $args = ''): void
+#[AsTask(description: 'Proxy to artisan with ARGS', namespace: 'laravel')]
+function artisan(string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s %s', php(), laravel_artisan_bin(), $args)));
+    run(dockerize(sprintf('%s %s %s', php(), artisan_bin(), $args)));
 }
 
-#[AsTask(description: 'Install Composer dependencies')]
-function laravel_install(): void
+#[AsTask(description: 'Install Composer dependencies', namespace: 'laravel')]
+function install(): void
 {
     composer_install();
 }
 
-#[AsTask(description: 'Run migrations and seeders')]
-function laravel_migrate_seed(): void
+#[AsTask(description: 'Run migrations and seeders', namespace: 'laravel')]
+function migrate_seed(): void
 {
-    laravel_migrate();
-    laravel_seed();
+    migrate();
+    seed();
 }
 
-#[AsTask(description: 'Clear and rebuild cache')]
-function laravel_cache(): void
+#[AsTask(description: 'Clear and rebuild cache', namespace: 'laravel')]
+function cache(): void
 {
-    laravel_artisan('optimize:clear');
-    laravel_artisan('optimize');
+    artisan('optimize:clear');
+    artisan('optimize');
 }
 
-#[AsTask(description: 'Run tests (Pest/PHPUnit)')]
-function laravel_test(string $args = ''): void
+#[AsTask(description: 'Run tests (Pest/PHPUnit)', namespace: 'laravel')]
+function test(string $args = ''): void
 {
     $cmd = file_exists('vendor/bin/pest') ? 'vendor/bin/pest' : phpunit_bin();
     run(dockerize(sprintf('%s %s', $cmd, $args)));
 }
 
-#[AsTask(description: 'Start the queue worker in background (if not in Docker, use supervisord)')]
-function laravel_queue(): void
+#[AsTask(description: 'Start the queue worker in background (if not in Docker, use supervisord)', namespace: 'laravel')]
+function queue(): void
 {
-    laravel_artisan('queue:work --tries=3 --timeout=120');
+    artisan('queue:work --tries=3 --timeout=120');
 }
 
-#[AsTask(description: 'Start Laravel development server')]
-function laravel_serve(): void
+#[AsTask(description: 'Start Laravel development server', namespace: 'laravel')]
+function serve(): void
 {
-    laravel_artisan('serve');
+    artisan('serve');
 }
 
-#[AsTask(description: 'Run database migrations')]
-function laravel_migrate(): void
+#[AsTask(description: 'Run database migrations', namespace: 'laravel')]
+function migrate(): void
 {
-    laravel_artisan('migrate --force');
+    artisan('migrate --force');
 }
 
-#[AsTask(description: 'Run database seeders')]
-function laravel_seed(): void
+#[AsTask(description: 'Run database seeders', namespace: 'laravel')]
+function seed(): void
 {
-    laravel_artisan('db:seed --force');
+    artisan('db:seed --force');
 }
 
-#[AsTask(description: 'Fresh migrate (drops all tables and re-runs all migrations)')]
-function laravel_migrate_fresh(): void
+#[AsTask(description: 'Fresh migrate (drops all tables and re-runs all migrations)', namespace: 'laravel')]
+function migrate_fresh(): void
 {
-    laravel_artisan('migrate:fresh --force');
+    artisan('migrate:fresh --force');
 }
 
-#[AsTask(description: 'Generate application key')]
-function laravel_key_generate(): void
+#[AsTask(description: 'Generate application key', namespace: 'laravel')]
+function key_generate(): void
 {
-    laravel_artisan('key:generate');
+    artisan('key:generate');
 }
 
-#[AsTask(description: 'Clear all caches (app, route, config, view)')]
-function laravel_cache_clear_all(): void
+#[AsTask(description: 'Clear all caches (app, route, config, view)', namespace: 'laravel')]
+function cache_clear_all(): void
 {
-    laravel_artisan('optimize:clear');
+    artisan('optimize:clear');
 }
 
-#[AsTask(description: 'Cache configuration')]
-function laravel_config_cache(): void
+#[AsTask(description: 'Cache configuration', namespace: 'laravel')]
+function config_cache(): void
 {
-    laravel_artisan('config:cache');
+    artisan('config:cache');
 }
 
-#[AsTask(description: 'Cache routes')]
-function laravel_route_cache(): void
+#[AsTask(description: 'Cache routes', namespace: 'laravel')]
+function route_cache(): void
 {
-    laravel_artisan('route:cache');
+    artisan('route:cache');
 }
 
-#[AsTask(description: 'Cache events')]
-function laravel_event_cache(): void
+#[AsTask(description: 'Cache events', namespace: 'laravel')]
+function event_cache(): void
 {
-    laravel_artisan('event:cache');
+    artisan('event:cache');
 }
 
-#[AsTask(description: 'Restart queue workers')]
-function laravel_queue_restart(): void
+#[AsTask(description: 'Restart queue workers', namespace: 'laravel')]
+function queue_restart(): void
 {
-    laravel_artisan('queue:restart');
+    artisan('queue:restart');
 }
 
-#[AsTask(description: 'Listen to the queue (foreground)')]
-function laravel_queue_listen(): void
+#[AsTask(description: 'Listen to the queue (foreground)', namespace: 'laravel')]
+function queue_listen(): void
 {
-    laravel_artisan('queue:listen');
+    artisan('queue:listen');
 }
 
-#[AsTask(description: 'Run scheduler once')]
-function laravel_schedule_run(): void
+#[AsTask(description: 'Run scheduler once', namespace: 'laravel')]
+function schedule_run(): void
 {
-    laravel_artisan('schedule:run');
+    artisan('schedule:run');
 }
 
-#[AsTask(description: 'Create storage symlink')]
-function laravel_storage_link(): void
+#[AsTask(description: 'Create storage symlink', namespace: 'laravel')]
+function storage_link(): void
 {
-    laravel_artisan('storage:link');
+    artisan('storage:link');
 }
 
-#[AsTask(description: 'Open Laravel Tinker shell')]
-function laravel_tinker(): void
+#[AsTask(description: 'Open Laravel Tinker shell', namespace: 'laravel')]
+function tinker(): void
 {
-    laravel_artisan('tinker');
+    artisan('tinker');
 }
 
-#[AsTask(description: 'Tail Laravel logs (env: LARAVEL_LOG_FILE, LARAVEL_LOG_LINES)')]
-function laravel_logs_tail(string $file = 'storage/logs/laravel.log', string $lines = '200'): void
+#[AsTask(description: 'Tail Laravel logs (env: LARAVEL_LOG_FILE, LARAVEL_LOG_LINES)', namespace: 'laravel')]
+function logs_tail(string $file = 'storage/logs/laravel.log', string $lines = '200'): void
 {
     run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
 }
 
-#[AsTask(description: 'Project setup (composite): composer install, key, migrate, seed, storage link, cache')]
-function laravel_setup(bool $seed = true): void
+#[AsTask(description: 'Project setup (composite): composer install, key, migrate, seed, storage link, cache', namespace: 'laravel')]
+function setup(bool $seed = true): void
 {
-    laravel_install();
-    laravel_key_generate();
-    laravel_migrate();
+    install();
+    key_generate();
+    migrate();
     if ($seed) {
-        laravel_seed();
+        seed();
     }
-    laravel_storage_link();
-    laravel_cache();
+    storage_link();
+    cache();
 }
 
-#[AsTask(description: 'CI helper (cache + tests) - composite')]
-function laravel_ci(): void
+#[AsTask(description: 'CI helper (cache + tests) - composite', namespace: 'laravel')]
+function ci(): void
 {
-    laravel_cache();
-    laravel_test();
+    cache();
+    test();
 }
