@@ -11,7 +11,6 @@ use Composer\DependencyResolver\Operation\OperationInterface;
 use Composer\Installer\PackageEvent;
 use Composer\IO\IOInterface;
 use Composer\Package\Package;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 final class PluginTest extends TestCase
@@ -46,14 +45,46 @@ final class PluginTest extends TestCase
 
     public function testOnPostPackageInstallCreatesCastorFileWithSelectedRecipeAndOutputsMessage(): void
     {
-        // TODO
-        self::markTestSkipped('Not implemented yet');
+        // Select Laravel (index 1)
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 1);
+
+        $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+        $plugin->onPostPackageInstall($packageEvent);
+
+        $castorFile = $this->tmpDir . '/castor.php';
+        self::assertFileExists($castorFile);
+        $content = file_get_contents($castorFile) ?: '';
+        self::assertStringContainsString('/recipes/laravel.php', $content);
+
+        $all = $messages();
+        // Has intro, created message and done message
+        self::assertTrue($this->arrayAnyContains($all, 'Castor Recipes'), 'Expected intro message');
+        self::assertTrue($this->arrayAnyContains($all, 'Created'), 'Expected created message');
+        self::assertTrue($this->arrayAnyContains($all, 'laravel'), 'Expected recipe name in created message');
+        self::assertTrue($this->arrayAnyContains($all, 'Done!'), 'Expected done message');
     }
 
     public function testOnPostPackageInstallDoesNotOverwriteExistingCastorFileAndPrintsManualInstructions(): void
     {
-        // TODO
-        self::markTestSkipped('Not implemented yet');
+        // Pre-create castor.php
+        $castorFile = $this->tmpDir . '/castor.php';
+        file_put_contents($castorFile, '<?php echo "original";');
+        $original = file_get_contents($castorFile);
+
+        // Select Magento2 (index 4)
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 4);
+
+        $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+        $plugin->onPostPackageInstall($packageEvent);
+
+        // File should not be overwritten
+        self::assertFileExists($castorFile);
+        self::assertSame($original, file_get_contents($castorFile));
+
+        $all = $messages();
+        self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected notice about existing file');
+        self::assertTrue($this->arrayAnyContains($all, 'Manually add the following line'), 'Expected manual instruction');
+        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/magento2.php';"), 'Expected require line for selected recipe');
     }
 
     public function testOnPostPackageInstallIgnoresDifferentPackage(): void
@@ -168,8 +199,25 @@ final class PluginTest extends TestCase
 
     public function testCreatedMessageUsesPathRelativeToCwd(): void
     {
-        // TODO
-        self::markTestSkipped('Not implemented yet');
+        // choose orocommerce (index 3) arbitrarily
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 3);
+
+        $cwd = getcwd();
+        chdir($this->tmpDir);
+
+        try {
+            $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+            $plugin->onPostPackageInstall($packageEvent);
+        } finally {
+            if ($cwd !== false) {
+                chdir($cwd);
+            }
+        }
+
+        $all = $messages();
+        $createdMessages = array_values(array_filter($all, fn (string $m): bool => str_contains($m, 'Created') && str_contains($m, 'castor.php')));
+        self::assertNotEmpty($createdMessages, 'Expected a created message mentioning castor.php');
+        self::assertFalse(str_contains($createdMessages[0], $this->tmpDir), 'Path in created message should be relative, not absolute');
     }
 
     /**
@@ -179,22 +227,9 @@ final class PluginTest extends TestCase
      */
     private function makeActivatedPlugin(int $ioSelect): array
     {
-        // Mock IO to capture writes and control select()
-        /** @var IOInterface&MockObject $io */
-        $io = $this->createMock(IOInterface::class);
-
-        $writes = [];
-        $io->method('write')
-            ->willReturnCallback(function ($messages) use (&$writes): void {
-                if (is_array($messages)) {
-                    foreach ($messages as $message) {
-                        $writes[] = (string) $message;
-                    }
-                } else {
-                    $writes[] = (string) $messages;
-                }
-            });
-        $io->method('select')->willReturn($ioSelect);
+        // Use BufferIO to capture all writes and feed the selection via setUserInputs()
+        $bufferIO = new \Composer\IO\BufferIO();
+        $bufferIO->setUserInputs([(string) $ioSelect]);
 
         // Mock Composer and Config to provide vendor-dir
         $config = $this->getMockBuilder(ComposerConfig::class)
@@ -207,11 +242,20 @@ final class PluginTest extends TestCase
         $composer->method('getConfig')->willReturn($config);
 
         $plugin = new Plugin();
-        $plugin->activate($composer, $io);
+        $plugin->activate($composer, $bufferIO);
 
-        $messagesGetter = fn (): array => $writes;
+        $messagesGetter = function () use ($bufferIO): array {
+            $reflectionClass = new \ReflectionClass($bufferIO);
+            $out = $reflectionClass->getMethod('getOutput')->invoke($bufferIO);
+            $text = trim($out);
+            if ($text === '') {
+                return [];
+            }
 
-        return [$plugin, $io, $messagesGetter];
+            return array_values(array_filter(array_map(trim(...), preg_split('/\r?\n/', $text))));
+        };
+
+        return [$plugin, $bufferIO, $messagesGetter];
     }
 
     private function makePackageEventForInstall(string $packageName): PackageEvent
@@ -284,6 +328,20 @@ final class PluginTest extends TestCase
         $event->method('getOperation')->willReturn($operation);
 
         return $event;
+    }
+
+    /**
+     * @param array<string> $messages
+     */
+    private function arrayAnyContains(array $messages, string $needle): bool
+    {
+        foreach ($messages as $message) {
+            if (str_contains((string) $message, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function removeDir(string $dir): void
