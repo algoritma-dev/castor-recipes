@@ -6,8 +6,8 @@ namespace CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 
+use CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
-use Tests\E2E\Support\Proc;
 
 final class QualityCheckTest extends TestCase
 {

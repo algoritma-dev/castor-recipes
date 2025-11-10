@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsArgument;
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
+
 use Symfony\Component\Filesystem\Path;
-use Castor\Attribute\AsArgument;
 
 require_once __DIR__ . '/_common.php';
 
@@ -36,13 +37,7 @@ function pre_commit(string $file = 'bin/precommit'): void
         $process = run('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
         $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
 
-        if ($modifiedFiles === []) {
-            echo "No modified files found.\n";
-
-            return;
-        }
-
-        $filesArg = implode(' ', array_map(function (string $file) { return Path::makeRelative($file, getcwd()); }, $modifiedFiles));
+        $filesArg = trim(implode(' ', array_map(fn(string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
 
         php_cs_fixer(false, $filesArg);
         rector(false, $filesArg);

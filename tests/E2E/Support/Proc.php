@@ -2,19 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests\E2E\Support;
+namespace CastorRecipes\Tests\E2E\Support;
 
 final class Proc
 {
-    public readonly int $exitCode;
-    public readonly string $stdout;
-    public readonly string $stderr;
-
-    private function __construct(int $exitCode, string $stdout, string $stderr)
+    private function __construct(public readonly int $exitCode, public readonly string $stdout, public readonly string $stderr)
     {
-        $this->exitCode = $exitCode;
-        $this->stdout = $stdout;
-        $this->stderr = $stderr;
     }
 
     /**
@@ -34,7 +27,7 @@ final class Proc
         $fullEnv = array_merge(self::baseEnv(), $env);
 
         $proc = proc_open($cmd, $descriptors, $pipes, $cwd ?? getcwd(), $fullEnv);
-        if (!\is_resource($proc)) {
+        if (! \is_resource($proc)) {
             throw new \RuntimeException('Unable to start process');
         }
 
@@ -47,9 +40,8 @@ final class Proc
         }
 
         $status = proc_get_status($proc);
-        // Ensure process terminated
         $exitCode = proc_close($proc);
-        if ($exitCode === -1 && isset($status['exitcode']) && \is_int($status['exitcode'])) {
+        if ($exitCode === -1) {
             $exitCode = $status['exitcode'];
         }
 
@@ -70,8 +62,11 @@ final class Proc
             'PATH', 'HOME', 'USER', 'TMPDIR', 'TEMP', 'TMP',
             'COMPOSER_HOME',
         ] as $k) {
-            if (isset($_ENV[$k])) { $base[$k] = (string) $_ENV[$k]; }
-            elseif (isset($_SERVER[$k])) { $base[$k] = (string) $_SERVER[$k]; }
+            if (isset($_ENV[$k])) {
+                $base[$k] = (string) $_ENV[$k];
+            } elseif (isset($_SERVER[$k])) {
+                $base[$k] = (string) $_SERVER[$k];
+            }
         }
         $base['LC_ALL'] = 'C';
         $base['LANG'] = 'C';

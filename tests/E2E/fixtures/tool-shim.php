@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 // Generic PHP shim for external tools. It records invocations to a log file.
 // Config via ENV:
 // - SHIM_LOG: absolute path to the log file (required in tests)
