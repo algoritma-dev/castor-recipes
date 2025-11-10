@@ -52,7 +52,7 @@ final class PluginTest extends TestCase
         // Select Laravel (index 1)
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 1);
 
-        $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+        $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
         $castorFile = $this->tmpDir . '/castor.php';
@@ -78,7 +78,7 @@ final class PluginTest extends TestCase
         // Select Magento2 (index 4)
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 4);
 
-        $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+        $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
         // File should not be overwritten
@@ -88,7 +88,7 @@ final class PluginTest extends TestCase
         $all = $messages();
         self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected notice about existing file');
         self::assertTrue($this->arrayAnyContains($all, 'Manually add the following line'), 'Expected manual instruction');
-        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/"), 'Expected require line for selected recipe');
+        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/"), 'Expected require line for selected recipe');
     }
 
     public function testOnPostPackageInstallIgnoresDifferentPackage(): void
@@ -137,7 +137,7 @@ final class PluginTest extends TestCase
     {
         [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 8); // shopware6
 
-        $packageEvent = $this->makePackageEventForUpdate('raffaelecarelle/castor-recipes');
+        $packageEvent = $this->makePackageEventForUpdate('algoritma/castor-recipes');
         $plugin->onPostPackageUpdate($packageEvent);
 
         $castorFile = $this->tmpDir . '/castor.php';
@@ -195,7 +195,7 @@ final class PluginTest extends TestCase
 
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 2); // Shopware6
 
-        $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+        $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
         $content = file_get_contents($castorFile);
@@ -215,7 +215,7 @@ final class PluginTest extends TestCase
         chdir($this->tmpDir);
 
         try {
-            $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
+            $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
             $plugin->onPostPackageInstall($packageEvent);
         } finally {
             if ($cwd !== false) {
@@ -234,7 +234,7 @@ final class PluginTest extends TestCase
         $castorFile = $this->tmpDir . '/castor.php';
 
         // Simulate existing castor.php with recipe require
-        $this->filesystem->dumpFile($castorFile, "<?php\n\nrequire __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';");
+        $this->filesystem->dumpFile($castorFile, "<?php\n\nrequire __DIR__ . '/vendor/algoritma/castor-recipes/recipes/symfony.php';");
 
         $composer = $this->createMock(Composer::class);
         $config = $this->getMockBuilder(ComposerConfig::class)
@@ -251,7 +251,7 @@ final class PluginTest extends TestCase
         $plugin->uninstall($composer, $io);
 
         $content = file_get_contents($castorFile);
-        self::assertStringNotContainsString('raffaelecarelle/castor-recipes/recipes/symfony.php', $content);
+        self::assertStringNotContainsString('algoritma/castor-recipes/recipes/symfony.php', $content);
     }
 
     public function testUninstallDoesNothingIfCastorFileDoesNotExist(): void
@@ -301,7 +301,7 @@ final class PluginTest extends TestCase
         [$plugin, $io, $messages] = $this->makeActivatedPlugin(ioSelect: 1); // Select publicRecipe
 
         // Run the installer
-        $plugin->onPostPackageInstall($this->makePackageEventForInstall('raffaelecarelle/castor-recipes'));
+        $plugin->onPostPackageInstall($this->makePackageEventForInstall('algoritma/castor-recipes'));
 
         $allMessages = $messages();
 

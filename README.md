@@ -39,14 +39,14 @@ Then reload your shell.
 In your existing project:
 
 ```bash
-composer require --dev raffaelecarelle/castor-recipes
+composer require --dev algoritma/castor-recipes
 ```
 
 During installation you will be asked to choose a recipe. If `castor.php` does not exist, it will be created automatically with the correct `require`, for example:
 
 ```php
 <?php
-require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';
+require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/symfony.php';
 ```
 
 If the file already exists, instructions will be printed to add the `require` line manually.
@@ -83,8 +83,8 @@ You can include multiple recipes at the same time by editing `castor.php` and ad
 
 ```php
 <?php
-require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/symfony.php';
-require __DIR__ . '/vendor/raffaelecarelle/castor-recipes/recipes/laravel.php';
+require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/symfony.php';
+require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/laravel.php';
 ```
 
 ## Notes

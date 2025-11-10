@@ -1,5 +1,5 @@
 {
-    "name": "raffaelecarelle/castor-recipes",
+    "name": "algoritma/castor-recipes",
     "description": "Composer plugin that installs ready-to-use Castor recipes for various platforms and frameworks",
     "type": "composer-plugin",
     "license": "MIT",
@@ -40,7 +40,7 @@
     "config": {
         "sort-packages": true,
         "allow-plugins": {
-            "raffaelecarelle/castor-recipes": true
+            "algoritma/castor-recipes": true
         }
     }
 }
