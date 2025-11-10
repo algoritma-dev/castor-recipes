@@ -7,11 +7,12 @@ use Castor\Attribute\AsTask;
 use function Castor\run;
 
 require_once __DIR__ . '/_common.php';
+require_once __DIR__ . '/_composer.php';
 
 #[AsTask(description: 'Install Magento 2 dependencies and initial setup', namespace: 'magento')]
 function setup(): void
 {
-    run(dockerize('composer install'));
+    composer_install();
     // setup:install requires many options; here we assume env vars are already set in the project
     $cmd = 'php bin/magento setup:install '
         . '--base-url=${M2_BASE_URL:-http://localhost/} '

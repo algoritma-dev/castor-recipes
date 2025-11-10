@@ -24,7 +24,7 @@ function setup(): void
 {
     // If composer.json exists, install dependencies (for bedrock-like projects)
     if (file_exists('composer.json')) {
-        run(dockerize('composer install'));
+        composer_install();
     }
 
     // Install WordPress via wp-cli if available

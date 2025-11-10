@@ -145,7 +145,7 @@ function logs_tail(string $lines = '200'): void
 {
     $env = env_value('APP_ENV', 'dev');
     $file = env_value('SF_LOG_FILE', sprintf('var/log/%s.log', $env));
-    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
+    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg((string) $file))));
 }
 
 #[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf')]

@@ -7,6 +7,8 @@ use Castor\Attribute\AsTask;
 use function Castor\load_dot_env;
 use function Castor\run;
 
+require_once __DIR__ . '/_composer.php';
+
 /**
  * Helper to get environment variables from .env via Castor and $_SERVER only.
  */
@@ -38,14 +40,14 @@ function dockerize(string $command, ?string $workdir = null): string
         return $command;
     }
 
-    $service = env_value('DOCKER_SERVICE', 'php');
+    $service = env_value('DOCKER_SERVICE', 'workspace');
     $compose = env_value('DOCKER_COMPOSE_FILE', 'docker-compose.yml');
 
     $workdirArg = $workdir ? sprintf('--workdir %s', escapeshellarg($workdir)) : '';
 
-    $process = run(sprintf('docker compose -f %s ps -q %s', escapeshellarg((string) $compose), escapeshellarg((string) $service)));
+    $isRunning = \Castor\capture(sprintf('docker compose -f %s ps -q %s', escapeshellarg((string) $compose), escapeshellarg((string) $service)));
 
-    $cmd = $process->getOutput() !== '' && $process->getOutput() !== '0' ? 'exec' : 'run --rm';
+    $cmd = $isRunning !== '' && $isRunning !== '0' ? 'exec' : 'run --rm';
 
     return sprintf(
         'docker compose -f %s %s %s %s sh -lc %s',
@@ -71,25 +73,4 @@ function php(): string
 function phpunit_bin(): string
 {
     return (string) env_value('PHPUNIT_BIN', is_file('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'bin/phpunit');
-}
-
-#[AsTask(description: 'Install Composer dependencies')]
-function composer_install(string $composerArgs = ''): void
-{
-    $composerCmd = (string) env_value('COMPOSER_BIN', 'composer');
-    run(dockerize(sprintf('%s %s %s', $composerCmd, 'install', $composerArgs)));
-}
-
-#[AsTask(description: 'Require Composer dependencies')]
-function composer_require(bool $dev = false, string $composerArgs = ''): void
-{
-    $composerCmd = (string) env_value('COMPOSER_BIN', 'composer');
-    run(dockerize(sprintf('%s %s %s %s', $composerCmd, 'require', $dev, $composerArgs)));
-}
-
-#[AsTask(description: 'Require Composer dependencies')]
-function composer_update(string $composerArgs = ''): void
-{
-    $composerCmd = (string) env_value('COMPOSER_BIN', 'composer');
-    run(dockerize(sprintf('%s %s %s', $composerCmd, 'update', $composerArgs)));
 }
