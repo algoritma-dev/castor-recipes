@@ -29,6 +29,11 @@
             "CastorRecipes\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "CastorRecipes\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "class": "CastorRecipes\\Plugin"
     },

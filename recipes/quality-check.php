@@ -6,6 +6,7 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 use Symfony\Component\Filesystem\Path;
+use Castor\Attribute\AsArgument;
 
 require_once __DIR__ . '/_common.php';
 
@@ -51,7 +52,7 @@ function pre_commit(string $file = 'bin/precommit'): void
 }
 
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
-function php_cs_fixer(bool $dryRun = false, string $files = ''): void
+function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): void
 {
     run(dockerize(sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
