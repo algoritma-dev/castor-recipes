@@ -5,8 +5,24 @@ declare(strict_types=1);
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
+use Symfony\Component\Filesystem\Path;
 
 require_once __DIR__ . '/_common.php';
+
+function phpcsfixer_bin(): string
+{
+    return (string) env_value('PHPCSFIXER_BIN', is_file('vendor/bin/php-cs-fixer') ? 'vendor/bin/php-cs-fixer' : 'bin/php-cs-fixer');
+}
+
+function rector_bin(): string
+{
+    return (string) env_value('RECTOR_BIN', is_file('vendor/bin/rector') ? 'vendor/bin/rector' : 'bin/rector');
+}
+
+function phpstan_bin(): string
+{
+    return (string) env_value('PHPSTAN_BIN', is_file('vendor/bin/phpstan') ? 'vendor/bin/phpstan' : 'bin/phpstan');
+}
 
 #[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
 function pre_commit(string $file = 'bin/precommit'): void
@@ -16,7 +32,7 @@ function pre_commit(string $file = 'bin/precommit'): void
         run(dockerize($file));
     } else {
         // Get modified and added files from git
-        $process = run('git diff --cached --name-only --diff-filter=AM');
+        $process = run('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
         $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
 
         if ($modifiedFiles === []) {
@@ -25,7 +41,7 @@ function pre_commit(string $file = 'bin/precommit'): void
             return;
         }
 
-        $filesArg = implode(' ', array_map(escapeshellarg(...), $modifiedFiles));
+        $filesArg = implode(' ', array_map(function (string $file) { return Path::makeRelative($file, getcwd()); }, $modifiedFiles));
 
         php_cs_fixer(false, $filesArg);
         rector(false, $filesArg);
@@ -37,19 +53,19 @@ function pre_commit(string $file = 'bin/precommit'): void
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
 function php_cs_fixer(bool $dryRun = false, string $files = ''): void
 {
-    run(dockerize(sprintf('./bin/php-cs-fixer fix %s %s', $dryRun ? '--dry-run' : '', $files)));
+    run(dockerize(sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function rector(bool $dryRun = false, string $args = ''): void
 {
-    run(dockerize(sprintf('./bin/rector %s %s', $dryRun ? '--dry-run' : '', $args)));
+    run(dockerize(sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function phpstan(string $args = ''): void
 {
-    run(dockerize(sprintf('./bin/phpstan %s', $args)));
+    run(dockerize(sprintf('%s %s', phpstan_bin(), $args)));
 }
 
 #[AsTask(description: 'Debug phpunit test', namespace: 'qa')]

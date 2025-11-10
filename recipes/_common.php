@@ -81,12 +81,12 @@ function dockerize(string $command, ?string $workdir = null): string
     $cmd = $isRunning !== '' && $isRunning !== '0' ? 'exec' : 'run --rm';
 
     return sprintf(
-        'docker compose -f %s %s %s %s sh -lc %s',
-        escapeshellarg((string) $compose),
-        escapeshellarg($cmd),
-        escapeshellarg((string) $service),
+        'docker compose -f %s %s %s %s %s',
+        $compose,
+        $cmd,
+        $service,
         $workdirArg,
-        escapeshellarg($command)
+        $command
     );
 }
 
