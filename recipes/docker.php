@@ -6,7 +6,7 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 
-require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/_common.php';
 
 #[AsTask(description: 'Remove all containers (running and stopped)')]
 function docker_containers_remove(): void

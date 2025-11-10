@@ -94,17 +94,10 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
 
     private function runInstaller(): void
     {
-        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-        $projectRoot = \dirname((string) $vendorDir);
+        $recipes = glob(dirname(__DIR__) . '/recipes/*.php');
+        $recipes = array_map(fn ($path): string => pathinfo((string) $path, PATHINFO_FILENAME), $recipes);
 
-        $recipes = [
-            'symfony',
-            'laravel',
-            'shopware6',
-            'orocommerce',
-            'magento2',
-            'wordpress',
-        ];
+        asort($recipes);
 
         $this->io->write('<info>Castor Recipes</info>: choose one or more recipes to install.');
 
@@ -142,6 +135,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $this->io->write(sprintf('<comment>Added:</comment> %s', $choices[$choice]));
         }
 
+        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+        $projectRoot = \dirname((string) $vendorDir);
         $castorFile = $projectRoot . '/castor.php';
         $filesystem = new Filesystem();
 

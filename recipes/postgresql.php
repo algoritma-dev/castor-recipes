@@ -6,7 +6,7 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 
-require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/_common.php';
 
 #[AsTask(description: 'Drop the database')]
 function db_drop(?string $user = null, ?string $dbName = null): void

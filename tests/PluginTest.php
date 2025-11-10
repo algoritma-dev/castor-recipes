@@ -50,7 +50,7 @@ final class PluginTest extends TestCase
     public function testOnPostPackageInstallCreatesCastorFileWithSelectedRecipeAndOutputsMessage(): void
     {
         // Select Laravel (index 1)
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 2);
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 3);
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
@@ -76,7 +76,7 @@ final class PluginTest extends TestCase
         $original = file_get_contents($castorFile);
 
         // Select Magento2 (index 4)
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 5);
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 4);
 
         $packageEvent = $this->makePackageEventForInstall('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
@@ -135,7 +135,7 @@ final class PluginTest extends TestCase
 
     public function testOnPostPackageUpdateCreatesCastorFileToo(): void
     {
-        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 3); // shopware6
+        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 8); // shopware6
 
         $packageEvent = $this->makePackageEventForUpdate('raffaelecarelle/castor-recipes');
         $plugin->onPostPackageUpdate($packageEvent);

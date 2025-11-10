@@ -6,7 +6,7 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 
-require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/_common.php';
 
 #[AsTask(description: 'Install Magento 2 dependencies and initial setup')]
 function magento2_setup(): void

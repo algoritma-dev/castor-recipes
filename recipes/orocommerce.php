@@ -6,7 +6,7 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 
-require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/_common.php';
 
 function oro_console_bin(): string
 {
@@ -15,7 +15,7 @@ function oro_console_bin(): string
 
 function oro_env_value(string $key, string $default = ''): string
 {
-    return (string) env_value($key, $default, \Castor\Helper\PathHelper::getRoot() . '/.env-app');
+    return (string) env_value($key, $default, dirname(\Castor\Helper\PathHelper::getRoot()) . '/.env-app');
 }
 
 #[AsTask(description: 'Installa dipendenze e setup database OroCommerce (composite)')]

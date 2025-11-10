@@ -6,12 +6,12 @@ use Castor\Attribute\AsTask;
 
 use function Castor\run;
 
-require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/_common.php';
 
 #[AsTask(description: 'Pre commit code analysis')]
 function pre_commit(string $file = 'bin/precommit'): void
 {
-    $file = \Castor\Helper\PathHelper::getRoot() . '/' . $file;
+    $file = dirname(\Castor\Helper\PathHelper::getRoot()) . '/' . $file;
     if (is_file($file) && is_executable($file)) {
         run(dockerize($file));
     } else {
