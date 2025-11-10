@@ -75,10 +75,10 @@ function test_watch(string $prefix = ''): void
     run(dockerize($command));
 }
 
-#[AsTask(description: 'Run all tests (PHPUnit and JS)', namespace: 'qa')]
+#[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]
 function tests(string $args = ''): void
 {
-    run(dockerize(sprintf('bin/phpunit %s', $args)));
+    run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
 }
 
 /**
