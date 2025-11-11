@@ -104,7 +104,7 @@ function db_backup(?string $user = null, ?string $dbName = null): void
     if ($gzipAvailable) {
         run(dockerize(sprintf('mysqldump %s %s \| gzip \> %s.gz', $flags, $dbName, $dumpfile)));
     } else {
-        run(dockerize(sprintf('mysqldump %s %s > %s', $flags, $dbName, $dumpfile)));
+        run(dockerize(sprintf('mysqldump %s %s \> %s', $flags, $dbName, $dumpfile)));
     }
     restore_env('DOCKER_SERVICE');
 }
