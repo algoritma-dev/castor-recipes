@@ -83,7 +83,7 @@ function db_restore(#[AsArgument]string $dump, ?string $user = null, ?string $db
 
     $flags = mysql_flags($user);
     // Use cat | mysql to support gzcat/zcat upstream if needed by user
-    run(dockerize(sprintf('cat %s | mysql %s %s', $dump, $flags, $dbName)));
+    run(sprintf('cat %s | ', $dump) . dockerize(sprintf('mysql %s %s', $flags, $dbName), null, true));
 
     restore_env('DOCKER_SERVICE');
 }

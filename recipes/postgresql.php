@@ -62,7 +62,7 @@ function db_restore(string $dump, ?string $user = null, ?string $dbName = null):
 
     db_drop($user);
     db_create($user);
-    run(dockerize(sprintf('cat %s | psql -U %s -d %s', $dump, $user, $dbName)));
+    run(sprintf('cat %s | ', $dump) . dockerize(sprintf('psql -U %s -d %s', $user, $dbName), null, true));
 
     restore_env('DOCKER_SERVICE');
 }
@@ -80,10 +80,10 @@ function db_backup(?string $user = null, ?string $dbName = null): void
     $gzipAvailable = trim(\Castor\capture(dockerize('which gzip'))) !== '';
 
     if ($gzipAvailable) {
-        run(dockerize(sprintf('pg_dump -U %s %s | gzip > %s.gz', $user, $dbName, $dumpfile)));
+        run(dockerize(sprintf('pg_dump -U %s %s \| gzip \> %s.gz', $user, $dbName, $dumpfile)));
 
     } else {
-        run(dockerize(sprintf('pg_dump -U %s %s > %s', $user, $dbName, $dumpfile)));
+        run(dockerize(sprintf('pg_dump -U %s %s \> %s', $user, $dbName, $dumpfile)));
     }
 
     restore_env('DOCKER_SERVICE');

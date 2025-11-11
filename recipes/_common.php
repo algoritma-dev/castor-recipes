@@ -73,7 +73,7 @@ function restore_env(string $key): void
  *  - DOCKER_SERVICE (default: php)
  *  - DOCKER_COMPOSE_FILE (default: docker-compose.yml)
  */
-function dockerize(string $command, ?string $workdir = null): string
+function dockerize(string $command, ?string $workdir = null, bool $tty = false): string
 {
     $useDocker = env_value('CASTOR_DOCKER') === '1' || env_value('CASTOR_DOCKER') === 'true';
 
@@ -91,9 +91,10 @@ function dockerize(string $command, ?string $workdir = null): string
     $cmd = $isRunning !== '' && $isRunning !== '0' ? 'exec' : 'run --rm';
 
     return sprintf(
-        'docker compose -f %s %s %s %s %s',
+        'docker compose -f %s %s %s %s %s %s',
         $compose,
         $cmd,
+        $tty ? '-T' : '',
         $service,
         $workdirArg,
         $command

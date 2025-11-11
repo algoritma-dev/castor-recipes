@@ -85,7 +85,7 @@ final class MySqlTasksTest extends TestCase
         // Drop, Create, then restore via cat | mysql
         self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "DROP DATABASE IF EXISTS `appdb`"', $log);
         self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "CREATE DATABASE `appdb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"', $log);
-        self::assertStringContainsString('cat ' . $dump . ' | mysql -u app --host=127.0.0.1 --port=3306 appdb', $log);
+        self::assertStringContainsString('-T mysql mysql -u app --host=127.0.0.1 --port=3306 appdb', $log);
     }
 
     public function testDbBackupBuildsExpectedCommand(): void
