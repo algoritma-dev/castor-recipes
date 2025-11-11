@@ -27,8 +27,7 @@ default:
         - rm /tmp/ssh_key
         - mkdir -p ~/.ssh
         - chmod 700 ~/.ssh
-        - ssh-keyscan github.com >> ~/.ssh/known_hosts
-        - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+        - ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
 
 # Template for tests jobs
