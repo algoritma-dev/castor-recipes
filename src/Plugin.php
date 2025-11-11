@@ -182,7 +182,9 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $this->io->write('');
             foreach ($selectedRecipes as $selectedRecipe) {
                 $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
-                $this->io->write('    require __DIR__ . ' . "'/{$relativeRequirePath}';");
+                $requireStatements = "require __DIR__ . '/{$relativeRequirePath}';\n";
+
+                $this->io->write("\t" . $requireStatements);
             }
             $this->io->write('');
         }
