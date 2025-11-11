@@ -163,7 +163,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             // Blank choice means finish
             if ($choices[$choice] === '') {
                 // Check if any recipe was selected
-                if ($selectedRecipes === []) {
+                if ($selectedRecipes === [] && $existingRecipes === []) {
                     $this->io->write('<error>You must select at least one recipe.</error>');
 
                     continue;
@@ -202,7 +202,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $requireStatements = '';
 
             foreach ($selectedRecipes as $selectedRecipe) {
-                $requireLine = "require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/{$selectedRecipe}.php';";
+                $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
+                $requireLine = "require __DIR__ . '/{$relativeRequirePath}';\n";
 
                 // is require already present?
                 if (str_contains($content, $requireLine)) {
@@ -228,7 +229,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
                     . "\n" . $requireStatements
                     . substr($content, $insertPosition);
 
-                file_put_contents($castorFile, $newContent);
+                $filesystem->dumpFile($castorFile, $newContent);
 
                 $this->io->write(\sprintf(
                     '<info>Added</info> %d recipe(s) to %s: <comment>%s</comment>.',
