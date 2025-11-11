@@ -40,7 +40,7 @@ function pre_commit(string $file = 'bin/precommit'): void
 
         php_cs_fixer(false, $filesArg);
         rector(false, $filesArg);
-        phpstan("analyse $filesArg");
+        phpstan("analyse --memory-limit=-1 $filesArg");
         tests();
     }
 }

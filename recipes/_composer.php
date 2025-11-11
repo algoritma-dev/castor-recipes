@@ -12,21 +12,22 @@ function composer_bin(): string
 }
 
 #[AsTask(name: 'install', namespace: 'composer', description: 'Install Composer dependencies')]
-function composer_install(string $composerArgs = ''): void
+function composer_install(string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s %s', composer_bin(), 'install', $composerArgs)));
+    run(dockerize(sprintf('%s %s %s', composer_bin(), 'install', $args)));
 }
 
 #[AsTask(name: 'require', namespace: 'composer', description: 'Require Composer dependencies')]
-function composer_requires(bool $dev = false, string $composerArgs = ''): void
+function composer_requires(bool $dev = false, string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s %s %s', composer_bin(), 'require', $dev, $composerArgs)));
+    $devFlag = $dev ? '--dev' : '';
+    run(dockerize(sprintf('%s %s %s %s', composer_bin(), 'require', $devFlag, $args)));
 }
 
 #[AsTask(name: 'update', namespace: 'composer', description: 'Require Composer dependencies')]
-function composer_update(string $composerArgs = ''): void
+function composer_update(string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s %s', composer_bin(), 'update', $composerArgs)));
+    run(dockerize(sprintf('%s %s %s', composer_bin(), 'update', $args)));
 }
 
 #[AsTask(name: 'run', namespace: 'composer', description: 'Run script(s)')]
