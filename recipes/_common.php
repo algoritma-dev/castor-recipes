@@ -92,9 +92,9 @@ function dockerize(string $command, ?string $workdir = null): string
 
     return sprintf(
         'docker compose -f %s %s %s %s %s',
-        $compose,
+        escapeshellarg((string) $compose),
         $cmd,
-        $service,
+        escapeshellarg((string) $service),
         $workdirArg,
         $command
     );

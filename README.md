@@ -25,8 +25,6 @@ To show how to enable autocompletion, run:
 castor completion --help
 ```
 
-Then reload your shell.
-
 ## Supported Platforms/Frameworks
 - Symfony (`recipes/symfony.php`)
 - Laravel (`recipes/laravel.php`)
