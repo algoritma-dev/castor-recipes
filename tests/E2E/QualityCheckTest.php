@@ -18,7 +18,7 @@ final class QualityCheckTest extends TestCase
 
         // Build env to point recipe to our shim, and tell shim where to log
         $env = [
-            'PHPCSFIXER_BIN' => PHP_BINARY . ' ' . $shim,
+            'PHPCSFIXER_BIN' => \PHP_BINARY . ' ' . $shim,
             'SHIM_TOOL' => 'php-cs-fixer',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '0',
@@ -26,7 +26,7 @@ final class QualityCheckTest extends TestCase
 
         // Run the castor task from project root so castor can find castor.php
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'qa:php-cs-fixer',
             '--dry-run',
@@ -47,7 +47,7 @@ final class QualityCheckTest extends TestCase
 
         // Build env to point recipe to our shim, and tell shim where to log
         $env = [
-            'PHPCSFIXER_BIN' => PHP_BINARY . ' ' . $shim,
+            'PHPCSFIXER_BIN' => \PHP_BINARY . ' ' . $shim,
             'SHIM_TOOL' => 'php-cs-fixer',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '0',
@@ -55,7 +55,7 @@ final class QualityCheckTest extends TestCase
 
         // Run the castor task from project root so castor can find castor.php
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'qa:php-cs-fixer',
         ], $env, getcwd());
@@ -65,5 +65,78 @@ final class QualityCheckTest extends TestCase
 
         $log = file_get_contents($shimLog) ?: '';
         self::assertStringContainsString('php-cs-fixer fix', $log);
+    }
+
+    public function testRectorDryRun(): void
+    {
+        $shim = __DIR__ . '/fixtures/tool-shim.php';
+        $shimLog = sys_get_temp_dir() . '/castor-recipes-rector-' . uniqid('', true) . '.log';
+
+        $env = [
+            'RECTOR_BIN' => \PHP_BINARY . ' ' . $shim,
+            'SHIM_TOOL' => 'rector',
+            'SHIM_LOG' => $shimLog,
+            'CASTOR_DOCKER' => '0',
+        ];
+
+        $proc = Proc::run([
+            \PHP_BINARY,
+            'vendor/bin/castor',
+            'qa:rector',
+            '--dry-run',
+            '--args=--config=rector.php',
+        ], $env, getcwd());
+
+        self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
+        $log = file_get_contents($shimLog) ?: '';
+        self::assertStringContainsString('rector --dry-run --config=rector.php', $log);
+    }
+
+    public function testPhpStanAnalyse(): void
+    {
+        $shim = __DIR__ . '/fixtures/tool-shim.php';
+        $shimLog = sys_get_temp_dir() . '/castor-recipes-phpstan-' . uniqid('', true) . '.log';
+
+        $env = [
+            'PHPSTAN_BIN' => \PHP_BINARY . ' ' . $shim,
+            'SHIM_TOOL' => 'phpstan',
+            'SHIM_LOG' => $shimLog,
+            'CASTOR_DOCKER' => '0',
+        ];
+
+        $proc = Proc::run([
+            \PHP_BINARY,
+            'vendor/bin/castor',
+            'qa:phpstan',
+            '--args=analyse src',
+        ], $env, getcwd());
+
+        self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
+        $log = file_get_contents($shimLog) ?: '';
+        self::assertStringContainsString('phpstan analyse src', $log);
+    }
+
+    public function testTestsTaskUsesPhpunitBin(): void
+    {
+        $shim = __DIR__ . '/fixtures/tool-shim.php';
+        $shimLog = sys_get_temp_dir() . '/castor-recipes-phpunit-' . uniqid('', true) . '.log';
+
+        $env = [
+            'PHPUNIT_BIN' => \PHP_BINARY . ' ' . $shim,
+            'SHIM_TOOL' => 'phpunit',
+            'SHIM_LOG' => $shimLog,
+            'CASTOR_DOCKER' => '0',
+        ];
+
+        $proc = Proc::run([
+            \PHP_BINARY,
+            'vendor/bin/castor',
+            'qa:tests',
+            '--args=--filter=ExampleTest',
+        ], $env, getcwd());
+
+        self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
+        $log = file_get_contents($shimLog) ?: '';
+        self::assertStringContainsString('phpunit --filter=ExampleTest', $log);
     }
 }

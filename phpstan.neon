@@ -1,6 +1,9 @@
+includes:
+	- phpstan-algoritma-config.php
+
 parameters:
-    level: 6
-    paths:
-        - src
-        - tests
-        - recipes
+	level: 6
+	excludePaths:
+		- **/node_modules/*
+		- **/vendor/*
+

@@ -21,11 +21,11 @@ final class SymfonyTasksTest extends TestCase
             'SHIM_TOOL' => 'console',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '0', // force local execution
-            'PHP_BIN' => PHP_BINARY,
+            'PHP_BIN' => \PHP_BINARY,
         ];
 
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'sf:cache-clear',
         ], $env, getcwd());
@@ -46,11 +46,11 @@ final class SymfonyTasksTest extends TestCase
             'SHIM_TOOL' => 'console',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '0',
-            'PHP_BIN' => PHP_BINARY,
+            'PHP_BIN' => \PHP_BINARY,
         ];
 
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'sf:cache-warmup',
         ], $env, getcwd());
@@ -71,11 +71,11 @@ final class SymfonyTasksTest extends TestCase
             'SHIM_TOOL' => 'console',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '0',
-            'PHP_BIN' => PHP_BINARY,
+            'PHP_BIN' => \PHP_BINARY,
         ];
 
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'sf:lint-all',
         ], $env, getcwd());

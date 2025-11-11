@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace CastorRecipes\Tests\E2E\Support;
 
-final class Proc
+final readonly class Proc
 {
-    private function __construct(public readonly int $exitCode, public readonly string $stdout, public readonly string $stderr)
-    {
-    }
+    private function __construct(public int $exitCode, public string $stdout, public string $stderr) {}
 
     /**
      * Run a command as a child process.

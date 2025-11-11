@@ -27,25 +27,25 @@ final class DockerizeTest extends TestCase
             self::fail('Unable to read docker shim source');
         }
         file_put_contents($dockerShim, $shimContent);
-        @chmod($dockerShim, 0755);
+        @chmod($dockerShim, 0o755);
 
         $shimLog = sys_get_temp_dir() . '/castor-recipes-shim-' . uniqid('', true) . '.log';
         $dockerLog = sys_get_temp_dir() . '/castor-recipes-docker-' . uniqid('', true) . '.log';
 
         // Build env: enable docker, point to our docker shim via PATH, set service and compose file
         $env = [
-            'PHPCSFIXER_BIN' => PHP_BINARY . ' ' . $toolShim,
+            'PHPCSFIXER_BIN' => \PHP_BINARY . ' ' . $toolShim,
             'SHIM_TOOL' => 'php-cs-fixer',
             'SHIM_LOG' => $shimLog,
             'CASTOR_DOCKER' => '1',
             'DOCKER_SERVICE' => 'php',
             'DOCKER_COMPOSE_FILE' => 'docker-compose.yml',
             'SHIM_DOCKER_LOG' => $dockerLog,
-            'PATH' => $binDir . PATH_SEPARATOR . (getenv('PATH') ?: ''),
+            'PATH' => $binDir . \PATH_SEPARATOR . (getenv('PATH') ?: ''),
         ];
 
         $proc = Proc::run([
-            PHP_BINARY,
+            \PHP_BINARY,
             'vendor/bin/castor',
             'qa:php-cs-fixer',
             '--dry-run',
@@ -57,10 +57,10 @@ final class DockerizeTest extends TestCase
 
         $dockerLogContent = file_get_contents($dockerLog) ?: '';
         // First call is a ps check, second is the run --rm invocation
-        self::assertStringContainsString("docker compose -f docker-compose.yml run --rm php", $dockerLogContent);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm php', $dockerLogContent);
 
         // The inner command arguments are recorded by the tool shim, not the docker shim
         $shimLogContent = file_get_contents($shimLog) ?: '';
-        self::assertStringContainsString("php-cs-fixer fix --dry-run src/Foo.php", $shimLogContent);
+        self::assertStringContainsString('php-cs-fixer fix --dry-run src/Foo.php', $shimLogContent);
     }
 }

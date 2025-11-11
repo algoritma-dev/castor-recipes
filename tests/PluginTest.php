@@ -7,27 +7,33 @@ namespace CastorRecipes\Tests;
 use CastorRecipes\Plugin;
 use Composer\Composer;
 use Composer\Config as ComposerConfig;
+use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\DependencyResolver\Operation\OperationInterface;
+use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\Installer\PackageEvent;
+use Composer\IO\BufferIO;
 use Composer\IO\IOInterface;
 use Composer\Package\Package;
+use Composer\Repository\InstalledRepositoryInterface;
+use Composer\Repository\RepositoryManager;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Filesystem;
 
 final class PluginTest extends TestCase
 {
     private string $tmpDir;
 
-    private ?\Symfony\Component\Filesystem\Filesystem $filesystem;
+    private ?Filesystem $filesystem;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->tmpDir = sys_get_temp_dir() . '/castor_recipes_plugin_test_' . bin2hex(random_bytes(4));
-        $this->filesystem = new \Symfony\Component\Filesystem\Filesystem();
+        $this->filesystem = new Filesystem();
         // project root
-        mkdir($this->tmpDir, 0777, true);
+        mkdir($this->tmpDir, 0o777, true);
         // vendor dir inside project root
-        mkdir($this->tmpDir . '/vendor', 0777, true);
+        mkdir($this->tmpDir . '/vendor', 0o777, true);
         // ensure CWD is not polluted across tests
     }
 
@@ -109,13 +115,13 @@ final class PluginTest extends TestCase
 
         $event = $this->createMock(PackageEvent::class);
         // Return an object without getPackage()
-        $event->method('getOperation')->willReturn(new class () implements OperationInterface {
-            public function getOperationType()
+        $event->method('getOperation')->willReturn(new class implements OperationInterface {
+            public function getOperationType(): string
             {
                 return '';
             }
 
-            public function show(bool $lock)
+            public function show(bool $lock): string
             {
                 return '';
             }
@@ -135,7 +141,7 @@ final class PluginTest extends TestCase
 
     public function testOnPostPackageUpdateCreatesCastorFileToo(): void
     {
-        [$plugin, , ] = $this->makeActivatedPlugin(ioSelect: 8); // shopware6
+        [$plugin] = $this->makeActivatedPlugin(ioSelect: 8); // shopware6
 
         $packageEvent = $this->makePackageEventForUpdate('algoritma/castor-recipes');
         $plugin->onPostPackageUpdate($packageEvent);
@@ -163,14 +169,14 @@ final class PluginTest extends TestCase
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 0);
 
         $event = $this->createMock(PackageEvent::class);
-        $event->method('getOperation')->willReturn(new class () implements OperationInterface {
+        $event->method('getOperation')->willReturn(new class implements OperationInterface {
             // no getTargetPackage method
-            public function getOperationType()
+            public function getOperationType(): string
             {
                 return '';
             }
 
-            public function show(bool $lock)
+            public function show(bool $lock): string
             {
                 return '';
             }
@@ -226,7 +232,7 @@ final class PluginTest extends TestCase
         $all = $messages();
         $createdMessages = array_values(array_filter($all, fn (string $m): bool => str_contains($m, 'Created') && str_contains($m, 'castor.php')));
         self::assertNotEmpty($createdMessages, 'Expected a created message mentioning castor.php');
-        self::assertFalse(str_contains($createdMessages[0], $this->tmpDir), 'Path in created message should be relative, not absolute');
+        self::assertStringNotContainsString($this->tmpDir, $createdMessages[0], 'Path in created message should be relative, not absolute');
     }
 
     public function testUninstallRemovesRecipeRequire(): void
@@ -244,8 +250,14 @@ final class PluginTest extends TestCase
         $config->method('get')->with('vendor-dir')->willReturn($this->tmpDir . '/vendor');
         $composer->method('getConfig')->willReturn($config);
 
+        $localRepo = $this->createMock(InstalledRepositoryInterface::class);
+        $localRepo->method('getDevMode')->willReturn(true);
+        $repoManager = $this->createMock(RepositoryManager::class);
+        $repoManager->method('getLocalRepository')->willReturn($localRepo);
+        $composer->method('getRepositoryManager')->willReturn($repoManager);
+
         $io = $this->createMock(IOInterface::class);
-        $io->expects(self::once())->method('write')->with('<info>Removed</info> recipe requires from castor.php');
+        $io->expects(static::once())->method('write')->with('<info>Removed</info> recipe requires from castor.php');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
@@ -265,7 +277,7 @@ final class PluginTest extends TestCase
         $composer->method('getConfig')->willReturn($config);
 
         $io = $this->createMock(IOInterface::class);
-        $io->expects(self::never())->method('write');
+        $io->expects(static::never())->method('write');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
@@ -287,7 +299,7 @@ final class PluginTest extends TestCase
         $composer->method('getConfig')->willReturn($config);
 
         $io = $this->createMock(IOInterface::class);
-        $io->expects(self::never())->method('write');
+        $io->expects(static::never())->method('write');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
@@ -316,15 +328,15 @@ final class PluginTest extends TestCase
     }
 
     /**
-     * Helpers
+     * Helpers.
      *
-     * @return array{Plugin, IOInterface, callable(): array<string>}
+     * @return array{Plugin, IOInterface, callable(): list<string>}
      */
     private function makeActivatedPlugin(int $ioSelect): array
     {
         // Use BufferIO to capture all writes and feed the selection via setUserInputs()
-        $bufferIO = new \Composer\IO\BufferIO();
-        $bufferIO->setUserInputs([(string)$ioSelect]);
+        $bufferIO = new BufferIO();
+        $bufferIO->setUserInputs([(string) $ioSelect]);
 
         // Mock Composer and Config to provide vendor-dir
         $config = $this->getMockBuilder(ComposerConfig::class)
@@ -357,34 +369,10 @@ final class PluginTest extends TestCase
     {
         $package = new Package($packageName, '1.0.0.0', '1.0.0');
 
-        $operation = new class ($package) implements OperationInterface {
-            public function __construct(private readonly Package $package)
-            {
-            }
-
-            public function getPackage(): Package
-            {
-                return $this->package;
-            }
-
-            public function getOperationType()
-            {
-                return '';
-            }
-
-            public function show(bool $lock)
-            {
-                return '';
-            }
-
-            public function __toString(): string
-            {
-                return '';
-            }
-        };
-
         $event = $this->createMock(PackageEvent::class);
-        $event->method('getOperation')->willReturn($operation);
+        $event->method('getOperation')->willReturn(new InstallOperation($package));
+        $event->method('getOperation')->willReturn(new InstallOperation($package));
+        $event->method('isDevMode')->willReturn(true);
 
         return $event;
     }
@@ -393,40 +381,15 @@ final class PluginTest extends TestCase
     {
         $package = new Package($packageName, '1.0.0.0', '1.0.0');
 
-        $operation = new class ($package) implements OperationInterface {
-            public function __construct(private readonly Package $package)
-            {
-            }
-
-            public function getTargetPackage(): Package
-            {
-                return $this->package;
-            }
-
-            public function getOperationType()
-            {
-                return '';
-            }
-
-            public function show(bool $lock)
-            {
-                return '';
-            }
-
-            public function __toString(): string
-            {
-                return '';
-            }
-        };
-
         $event = $this->createMock(PackageEvent::class);
-        $event->method('getOperation')->willReturn($operation);
+        $event->method('getOperation')->willReturn(new UpdateOperation($package, $package));
+        $event->method('isDevMode')->willReturn(true);
 
         return $event;
     }
 
     /**
-     * @param array<string> $messages
+     * @param list<string> $messages
      */
     private function arrayAnyContains(array $messages, string $needle): bool
     {
@@ -448,6 +411,7 @@ final class PluginTest extends TestCase
             new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::CHILD_FIRST
         );
+        /** @var \RecursiveDirectoryIterator $file */
         foreach ($files as $file) {
             if ($file->isDir()) {
                 @rmdir($file->getPathname());

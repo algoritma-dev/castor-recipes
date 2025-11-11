@@ -145,7 +145,17 @@ function logs_tail(string $lines = '200'): void
 {
     $env = env_value('APP_ENV', 'dev');
     $file = env_value('SF_LOG_FILE', sprintf('var/log/%s.log', $env));
-    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg((string) $file))));
+
+    // Ensure the log directory and file exist to avoid tail errors, and do not follow to keep task finite for tests/CI
+    if (!is_file((string) $file)) {
+        $dir = dirname((string) $file);
+        if (!is_dir($dir)) {
+            run(dockerize(sprintf('mkdir -p %s', escapeshellarg($dir))));
+        }
+        run(dockerize(sprintf('touch %s', escapeshellarg((string) $file))));
+    }
+
+    run(dockerize(sprintf('tail -n %s %s', escapeshellarg($lines), escapeshellarg((string) $file))));
 }
 
 #[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf')]
