@@ -59,7 +59,7 @@ function build(): void
 #[AsTask(description: 'Install and activate a plugin (set WP_PLUGIN env)', namespace: 'wp')]
 function plugin_install_activate(string $plugin): void
 {
-    run(dockerize(sprintf('%s plugin install %s --activate --force', bin(), escapeshellarg($plugin))));
+    run(dockerize(sprintf('%s plugin install %s --activate --force', bin(), $plugin)));
 }
 
 #[AsTask(description: 'Install and activate a theme (set WP_THEME env)', namespace: 'wp')]
@@ -70,7 +70,7 @@ function theme_install_activate(string $theme = ''): void
 
         return;
     }
-    run(dockerize(sprintf('%s theme install %s --activate --force', bin(), escapeshellarg($theme))));
+    run(dockerize(sprintf('%s theme install %s --activate --force', bin(), $theme)));
 }
 
 #[AsTask(description: 'Flush permalinks', namespace: 'wp')]
@@ -85,28 +85,28 @@ function user_create_admin(string $user = 'admin', string $pass = 'Admin123', st
     run(dockerize(sprintf(
         '%s user create %s %s --role=administrator --user_pass=%s',
         bin(),
-        escapeshellarg($user),
-        escapeshellarg($email),
-        escapeshellarg($pass)
+        $user,
+        $email,
+        $pass
     )));
 }
 
 #[AsTask(description: 'Database export (to file, set WP_DB_EXPORT default db.sql)', namespace: 'wp')]
 function db_export(string $dump): void
 {
-    run(dockerize(sprintf('%s db export %s', bin(), escapeshellarg($dump))));
+    run(dockerize(sprintf('%s db export %s', bin(), $dump)));
 }
 
 #[AsTask(description: 'Database import (from file, set WP_DB_IMPORT)', namespace: 'wp')]
 function db_import(string $dump): void
 {
-    run(dockerize(sprintf('%s db import %s', bin(), escapeshellarg($dump))));
+    run(dockerize(sprintf('%s db import %s', bin(), $dump)));
 }
 
 #[AsTask(description: 'Search-replace in DB (set WP_SR_FROM, WP_SR_TO)', namespace: 'wp')]
 function search_replace(string $from, string $to): void
 {
-    run(dockerize(sprintf('%s search-replace %s %s --all-tables', bin(), escapeshellarg($from), escapeshellarg($to))));
+    run(dockerize(sprintf('%s search-replace %s %s --all-tables', bin(), $from, $to)));
 }
 
 #[AsTask(description: 'Flush caches (if any caching plugin is present)', namespace: 'wp')]

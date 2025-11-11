@@ -52,7 +52,7 @@ function di_compile(): void
 #[AsTask(description: 'Deploy static content (set M2_LOCALES env, default en_US)', namespace: 'magento')]
 function static_deploy(string $locales = 'en_US'): void
 {
-    run(dockerize(sprintf('php bin/magento setup:static-content:deploy -f %s', escapeshellarg($locales))));
+    run(dockerize(sprintf('php bin/magento setup:static-content:deploy -f %s', $locales)));
 }
 
 #[AsTask(description: 'Cache clean', namespace: 'magento')]
@@ -87,7 +87,7 @@ function module_enable(string $module = ''): void
 
         return;
     }
-    run(dockerize(sprintf('php bin/magento module:enable %s', escapeshellarg($module))));
+    run(dockerize(sprintf('php bin/magento module:enable %s', $module)));
 }
 
 #[AsTask(description: 'Disable a module (set M2_MODULE env)', namespace: 'magento')]
@@ -98,7 +98,7 @@ function module_disable(string $module = ''): void
 
         return;
     }
-    run(dockerize(sprintf('php bin/magento module:disable %s', escapeshellarg($module))));
+    run(dockerize(sprintf('php bin/magento module:disable %s', $module)));
 }
 
 #[AsTask(description: 'Enable maintenance mode', namespace: 'magento')]
@@ -135,7 +135,7 @@ function console(string $args = ''): void
 function mode_production(string $locales = 'en_US'): void
 {
     console('deploy:mode:set production');
-    console(sprintf('setup:static-content:deploy -f %s', escapeshellarg($locales)));
+    console(sprintf('setup:static-content:deploy -f %s', $locales));
     cache_flush();
 }
 
@@ -154,23 +154,23 @@ function sampledata_upgrade(): void
 #[AsTask(description: 'Set configuration value (path, value, scope, scope-code)', namespace: 'magento')]
 function config_set(string $path, string $value, string $scope = 'default', string $scopeCode = ''): void
 {
-    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', escapeshellarg($scope)) : '';
-    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', escapeshellarg($scopeCode)) : '';
-    console(sprintf('config:set %s %s %s %s', escapeshellarg($path), escapeshellarg($value), $scopeArgs, $scopeCodeArgs));
+    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', $scope) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', $scopeCode) : '';
+    console(sprintf('config:set %s %s %s %s', $path, $value, $scopeArgs, $scopeCodeArgs));
 }
 
 #[AsTask(description: 'Get configuration value (path, scope, scope-code)', namespace: 'magento')]
 function config_get(string $path, string $scope = '', string $scopeCode = ''): void
 {
-    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', escapeshellarg($scope)) : '';
-    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', escapeshellarg($scopeCode)) : '';
-    console(sprintf('config:show %s %s %s', escapeshellarg($path), $scopeArgs, $scopeCodeArgs));
+    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', $scope) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', $scopeCode) : '';
+    console(sprintf('config:show %s %s %s', $path, $scopeArgs, $scopeCodeArgs));
 }
 
 #[AsTask(description: 'Tail Magento logs', namespace: 'magento')]
 function logs_tail(string $file = 'var/log/system.log', string $lines = '200'): void
 {
-    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
+    run(dockerize(sprintf('tail -n %s -f %s', $lines, $file)));
 }
 
 #[AsTask(description: 'Project setup full (composite): composer install, setup:upgrade, di:compile, static deploy, cache flush, reindex', namespace: 'magento')]

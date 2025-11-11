@@ -36,11 +36,7 @@ function pre_commit(string $file = 'bin/precommit'): void
         // Get modified and added files from git
         $process = run('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
         $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
-
-        $filesArg = array_map(static function (string $file): string {
-            return escapeshellarg($file);
-        }, $modifiedFiles);
-        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $filesArg)));        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $filesArg)));
+        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
 
         php_cs_fixer(false, $filesArg);
         rector(false, $filesArg);
@@ -84,7 +80,7 @@ function test_watch(string $prefix = ''): void
 {
     $command = 'npm run test-watch';
     if ($prefix !== '') {
-        $command .= ' -- --prefix ' . escapeshellarg($prefix);
+        $command .= ' -- --prefix ' . $prefix;
     }
 
     run(dockerize($command));

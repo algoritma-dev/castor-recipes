@@ -139,7 +139,7 @@ function tinker(): void
 #[AsTask(description: 'Tail Laravel logs (env: LARAVEL_LOG_FILE, LARAVEL_LOG_LINES)', namespace: 'laravel')]
 function logs_tail(string $file = 'storage/logs/laravel.log', string $lines = '200'): void
 {
-    run(dockerize(sprintf('tail -n %s -f %s', escapeshellarg($lines), escapeshellarg($file))));
+    run(dockerize(sprintf('tail -n %s -f %s', $lines, $file)));
 }
 
 #[AsTask(description: 'Project setup (composite): composer install, key, migrate, seed, storage link, cache', namespace: 'laravel')]

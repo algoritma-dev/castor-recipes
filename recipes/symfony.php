@@ -66,14 +66,14 @@ function test(string $args = ''): void
     run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
 }
 
-#[AsTask(description: 'Create database', namespace: 'sf')]
-function db_create(string $args = ''): void
+#[AsTask(name: 'db-create', description: 'Create database', namespace: 'sf')]
+function sf_db_create(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s doctrine:database:create --if-not-exists %s', php(), console_bin(), $args)));
 }
 
-#[AsTask(description: 'Drop database', namespace: 'sf')]
-function db_drop(string $args = ''): void
+#[AsTask(name: 'db-drop', description: 'Drop database', namespace: 'sf')]
+function sf_db_drop(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s doctrine:database:drop --force --if-exists %s', php(), console_bin(), $args)));
 }
@@ -81,8 +81,8 @@ function db_drop(string $args = ''): void
 #[AsTask(description: 'Reset database (drop, create, migrate, fixtures) - composite', namespace: 'sf')]
 function db_reset(bool $fixtures = true): void
 {
-    db_drop();
-    db_create();
+    sf_db_drop();
+    sf_db_create();
     migrate();
     if ($fixtures) {
         fixtures_load();
@@ -105,7 +105,7 @@ function fixtures_load(string $args = '--no-interaction --purge-with-truncate'):
 #[AsTask(description: 'Install assets (copy/symlink)', namespace: 'sf')]
 function assets_install(string $target = 'public', string $flags = '--symlink --relative'): void
 {
-    run(dockerize(sprintf('%s %s assets:install %s %s', php(), console_bin(), $flags, escapeshellarg($target))));
+    run(dockerize(sprintf('%s %s assets:install %s %s', php(), console_bin(), $flags, $target)));
 }
 
 #[AsTask(description: 'Lint YAML files', namespace: 'sf')]
@@ -137,7 +137,7 @@ function lint_all(): void
 #[AsTask(description: 'Consume Messenger messages', namespace: 'sf')]
 function messenger_consume(string $transports = 'async', string $args = '--time-limit=3600 --memory-limit=256M'): void
 {
-    run(dockerize(sprintf('%s %s messenger:consume %s %s', php(), console_bin(), escapeshellarg($transports), $args)));
+    run(dockerize(sprintf('%s %s messenger:consume %s %s', php(), console_bin(), $transports, $args)));
 }
 
 #[AsTask(description: 'Tail Symfony logs', namespace: 'sf')]
@@ -150,12 +150,12 @@ function logs_tail(string $lines = '200'): void
     if (!is_file((string) $file)) {
         $dir = dirname((string) $file);
         if (!is_dir($dir)) {
-            run(dockerize(sprintf('mkdir -p %s', escapeshellarg($dir))));
+            run(dockerize(sprintf('mkdir -p %s', $dir)));
         }
-        run(dockerize(sprintf('touch %s', escapeshellarg((string) $file))));
+        run(dockerize(sprintf('touch %s', $file)));
     }
 
-    run(dockerize(sprintf('tail -n %s %s', escapeshellarg($lines), escapeshellarg((string) $file))));
+    run(dockerize(sprintf('tail -n %s %s', $lines, $file)));
 }
 
 #[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf')]

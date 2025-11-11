@@ -73,7 +73,7 @@ function plugin_install_activate(string $plugins, string $args = ''): void
     }
 
     foreach ($plugins as $plugin) {
-        run(dockerize(sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, escapeshellarg($plugin))));
+        run(dockerize(sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, $plugin)));
     }
 }
 
@@ -98,16 +98,16 @@ function migrate_destructive(string $args = ''): void
 #[AsTask(description: 'Create admin user (env: SW_ADMIN_EMAIL, SW_ADMIN_PASSWORD, names/locale)', namespace: 'sw')]
 function admin_create(string $email = 'admin@shopware.com', string $password = 'shopware', string $firstname = 'Admin', string $lastname = 'User', string $locale = 'en'): void
 {
-    $localeArg = $locale !== '' ? sprintf('--locale=%s', escapeshellarg($locale)) : '';
+    $localeArg = $locale !== '' ? sprintf('--locale=%s', $locale) : '';
 
     run(dockerize(sprintf(
         '%s %s user:create %s --admin --password=%s --firstName=%s --lastName=%s %s',
         php(),
         sw_console_bin(),
-        escapeshellarg($email),
-        escapeshellarg($password),
-        escapeshellarg($firstname),
-        escapeshellarg($lastname),
+        $email,
+        $password,
+        $firstname,
+        $lastname,
         $localeArg
     )));
 }
@@ -174,7 +174,7 @@ function messenger_consume(string $args = '--no-debug'): void
 #[AsTask(description: 'Dump FOSJsRouting routes (JSON)', namespace: 'sw')]
 function js_routes_dump(string $format = 'json', string $args = ''): void
 {
-    $formatArg = $format !== '' ? sprintf('--format=%s', escapeshellarg($format)) : '';
+    $formatArg = $format !== '' ? sprintf('--format=%s', $format) : '';
     run(dockerize(sprintf('%s %s fos:js-routing:dump %s %s', php(), sw_console_bin(), $formatArg, $args)));
 }
 
@@ -257,10 +257,10 @@ function system_update(): void
     ];
 
     foreach ($packages as $package) {
-        run(dockerize(sprintf('%s recipes:update %s -v', composer_bin(), escapeshellarg($package))));
+        run(dockerize(sprintf('%s recipes:update %s -v', composer_bin(), $package)));
         run('git add .');
         $msg = sprintf('Updated %s recipe', $package === 'shopware/administration' ? 'Administration' : ($package === 'shopware/storefront' ? 'Storefront' : ($package === 'shopware/elasticsearch' ? 'Elasticsearch' : ($package === 'symfony/framework-bundle' ? 'Symfony Framework' : ($package === 'symfony/phpunit-bridge' ? 'PHPUnit' : 'Core')))));
-        run(sprintf('bash -lc %s', escapeshellarg(sprintf('git diff-index --quiet HEAD || git commit -m %s', escapeshellarg($msg)))));
+        run(sprintf('bash -lc %s', sprintf('git diff-index --quiet HEAD || git commit -m %s', $msg)));
     }
 }
 

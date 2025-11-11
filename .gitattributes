@@ -6,10 +6,12 @@
 
 # Docker
 *.dockerignore text export-ignore
-Dockerfile text
+Dockerfile text export-ignore
+docker-compose.yml export-ignore
 
 # Documentation
 *.md text diff=markdown export-ignore
+/docs/** export-ignore
 
 # Git config
 .gitattributes text export-ignore
@@ -20,15 +22,10 @@ Dockerfile text
 /tests/** export-ignore
 /recipes/** export-ignore
 /.github/** export-ignore
-/docs/** export-ignore
-phpunit.xml export-ignore
-rector.php export-ignore
+phpunit.xml.dist export-ignore
 phpstan.neon export-ignore
 .php-cs-fixer.dist.php export-ignore
-.phpstan-algoritma-config.php export-ignore
 .editorconfig export-ignore
 .env.example export-ignore
-docker-compose.yml export-ignore
-.gitlab-ci.yml export-ignore
-/docker/** export-ignore
+composer.lock export-ignore
 

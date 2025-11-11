@@ -84,17 +84,17 @@ function dockerize(string $command, ?string $workdir = null): string
     $service = env_value('DOCKER_SERVICE', 'workspace');
     $compose = env_value('DOCKER_COMPOSE_FILE', 'docker-compose.yml');
 
-    $workdirArg = $workdir ? sprintf('--workdir %s', escapeshellarg($workdir)) : '';
+    $workdirArg = $workdir ? sprintf('--workdir %s', $workdir) : '';
 
-    $isRunning = \Castor\capture(sprintf('docker compose -f %s ps -q %s', escapeshellarg((string) $compose), escapeshellarg((string) $service)));
+    $isRunning = \Castor\capture(sprintf('docker compose -f %s ps -q %s', $compose, $service));
 
     $cmd = $isRunning !== '' && $isRunning !== '0' ? 'exec' : 'run --rm';
 
     return sprintf(
         'docker compose -f %s %s %s %s %s',
-        escapeshellarg((string) $compose),
+        $compose,
         $cmd,
-        escapeshellarg((string) $service),
+        $service,
         $workdirArg,
         $command
     );
