@@ -1,55 +1,70 @@
 # GitLab CI equivalent of the GitHub Actions workflow in .github/workflows/ci.yml
 
 workflow:
-  rules:
-    # Run for merge requests and pushes to main (equivalent to GitHub on: push + pull_request on main)
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "main"
+    rules:
+        # Run for merge requests and pushes to main (equivalent to GitHub on: push + pull_request on main)
+        -   if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        -   if: $CI_COMMIT_BRANCH == "main"
 
 stages:
-  - test
-  - quality
+    - test
+    - quality
 
 # Composer cache shared per ref; vendor cached to speed up installs
 default:
-  cache:
-    key: "$CI_COMMIT_REF_SLUG"
-    paths:
-      - vendor/
-      - .composer/cache/
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - vendor/
+            - .composer/cache/
+
+.scripts:
+    ssh:
+        - eval $(ssh-agent -s)
+        - echo "$SSH_PRIVATE_KEY" | base64 -d > /tmp/ssh_key
+        - chmod 600 /tmp/ssh_key
+        - echo "$SSH_PASSPHRASE" | ssh-add /tmp/ssh_key
+        - rm /tmp/ssh_key
+        - mkdir -p ~/.ssh
+        - chmod 700 ~/.ssh
+        - ssh-keyscan github.com >> ~/.ssh/known_hosts
+        - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
 
 # Template for tests jobs
 .tests_template:
-  stage: test
-  before_script:
-    - apt-get update && apt-get install -y --no-install-recommends git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev && rm -rf /var/lib/apt/lists/*
-    - docker-php-ext-configure intl
-    - docker-php-ext-install -j"$(nproc)" intl pdo pdo_mysql pdo_sqlite xml mbstring
-    # Install Composer (v2 by default)
-    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-    # Configure Composer cache
-    - composer config cache-dir .composer/cache
-  script:
-    - composer install --prefer-dist --no-progress
-    - vendor/bin/phpunit
+    stage: test
+    before_script:
+        - !reference [ .scripts, ssh ]
+        - apt-get update && apt-get install -y --no-install-recommends git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev && rm -rf /var/lib/apt/lists/*
+        - docker-php-ext-configure intl
+        - docker-php-ext-install -j"$(nproc)" intl pdo pdo_mysql pdo_sqlite xml mbstring
+        # Install Composer (v2 by default)
+        - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+        # Configure Composer cache
+        - composer config cache-dir .composer/cache
+    script:
+        - composer install --prefer-dist --no-progress
+        - vendor/bin/phpunit
 
 # Matrix of PHP versions for tests
 php:tests:
-  image: "php:${PHP_VERSION}-cli"
-  extends: .tests_template
-  parallel:
-    matrix:
-      - PHP_VERSION: ["8.2", "8.3", "8.4", "8.5"]
+    image: "php:${PHP_VERSION}-cli"
+    extends: .tests_template
+    parallel:
+        matrix:
+            -   PHP_VERSION: [ "8.2", "8.3", "8.4", "8.5" ]
 
 # Static Analysis job with PHP 8.2
 quality:
-  stage: quality
-  image: "jakzal/phpqa:php8.2"
-  before_script:
-    - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
-    - composer config cache-dir .composer/cache
-    - composer install --prefer-dist --no-progress
-  script:
-    - vendor/bin/phpstan analyse
-    - vendor/bin/php-cs-fixer fix --dry-run --diff
-    - vendor/bin/rector process --dry-run
+    stage: quality
+    image: "jakzal/phpqa:php8.2"
+    before_script:
+        - !reference [ .scripts, ssh ]
+        - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
+        - composer config cache-dir .composer/cache
+        - composer install --prefer-dist --no-progress
+    script:
+        - vendor/bin/phpstan analyse
+        - vendor/bin/php-cs-fixer fix --dry-run --diff
+        - vendor/bin/rector process --dry-run
