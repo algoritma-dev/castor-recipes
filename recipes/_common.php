@@ -70,7 +70,7 @@ function restore_env(string $key): void
  *
  * Env vars:
  *  - CASTOR_DOCKER=1 enables docker
- *  - DOCKER_SERVICE (default: php)
+ *  - DOCKER_SERVICE (default: workspace)
  *  - DOCKER_COMPOSE_FILE (default: docker-compose.yml)
  */
 function dockerize(string $command, ?string $workdir = null, bool $tty = false): string
