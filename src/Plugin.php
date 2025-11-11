@@ -116,12 +116,36 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
 
         asort($recipes);
 
+        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+        $projectRoot = \dirname((string) $vendorDir);
+        $castorFile = $projectRoot . '/castor.php';
+        $filesystem = new Filesystem();
+
+        // Leggi le ricette già presenti nel file castor.php
+        $existingRecipes = [];
+        if ($filesystem->exists($castorFile)) {
+            $content = file_get_contents($castorFile);
+            foreach ($recipes as $recipe) {
+                if (str_contains($content, "vendor/algoritma/castor-recipes/recipes/{$recipe}.php")) {
+                    $existingRecipes[] = $recipe;
+                }
+            }
+        }
+
+        if ($existingRecipes !== []) {
+            $this->io->write(\sprintf(
+                '<info>Found %d recipe(s) already installed:</info> <comment>%s</comment>',
+                \count($existingRecipes),
+                implode(', ', $existingRecipes)
+            ));
+        }
+
         $this->io->write('<info>Castor Recipes</info>: choose one or more recipes to install.');
 
         $selectedRecipes = [];
 
         while (true) {
-            $availableRecipes = array_values(array_diff($recipes, $selectedRecipes));
+            $availableRecipes = array_values(array_diff($recipes, $selectedRecipes, $existingRecipes));
 
             if ($availableRecipes === []) {
                 $this->io->write('<info>All recipes have been selected.</info>');
@@ -152,11 +176,6 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $this->io->write(\sprintf('<comment>Added:</comment> %s', $choices[$choice]));
         }
 
-        $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-        $projectRoot = \dirname((string) $vendorDir);
-        $castorFile = $projectRoot . '/castor.php';
-        $filesystem = new Filesystem();
-
         if (! $filesystem->exists($castorFile)) {
             $requireStatements = '';
             foreach ($selectedRecipes as $selectedRecipe) {
@@ -178,14 +197,49 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             ));
         } else {
             $this->io->write('<comment>castor.php already exists in your project.</comment>');
-            $this->io->write('Manually add the following lines to your <info>castor.php</info> to include the recipes:');
-            $this->io->write('');
-            foreach ($selectedRecipes as $selectedRecipe) {
-                $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
-                $requireStatements = "require __DIR__ . '/{$relativeRequirePath}';\n";
 
-                $this->io->write("\t" . $requireStatements);
+            $content = file_get_contents($castorFile);
+            $requireStatements = '';
+
+            foreach ($selectedRecipes as $selectedRecipe) {
+                $requireLine = "require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/{$selectedRecipe}.php';";
+
+                // is require already present?
+                if (str_contains($content, $requireLine)) {
+                    $this->io->write("<info>Skipped:</info> {$selectedRecipe} (already present)");
+                    continue;
+                }
+
+                $requireStatements .= $requireLine . "\n";
             }
+
+            if ($requireStatements !== '') {
+                // find the first <?php statement
+                if (preg_match('/^<\?php\s*\n/m', $content, $matches, \PREG_OFFSET_CAPTURE)) {
+                    $insertPosition = $matches[0][1] + \strlen($matches[0][0]);
+                } else {
+                    // if no <?php statement is found, add one at the beginning of the file
+                    $content = "<?php\n\n" . $content;
+                    $insertPosition = 6; // "<?php\n" length
+                }
+
+                // insert the require statements
+                $newContent = substr($content, 0, $insertPosition)
+                    . "\n" . $requireStatements
+                    . substr($content, $insertPosition);
+
+                file_put_contents($castorFile, $newContent);
+
+                $this->io->write(\sprintf(
+                    '<info>Added</info> %d recipe(s) to %s: <comment>%s</comment>.',
+                    \count($selectedRecipes),
+                    $this->relativeToCwd($castorFile),
+                    implode(', ', $selectedRecipes)
+                ));
+            } else {
+                $this->io->write('<info>All selected recipes are already present in castor.php</info>');
+            }
+
             $this->io->write('');
         }
 

@@ -74,12 +74,11 @@ final class PluginTest extends TestCase
         self::assertTrue($this->arrayAnyContains($all, 'Done!'), 'Expected done message');
     }
 
-    public function testOnPostPackageInstallDoesNotOverwriteExistingCastorFileAndPrintsManualInstructions(): void
+    public function testOnPostPackageInstallAddsRequiresToExistingCastorFile(): void
     {
         // Pre-create castor.php
         $castorFile = $this->tmpDir . '/castor.php';
         file_put_contents($castorFile, '<?php echo "original";');
-        $original = file_get_contents($castorFile);
 
         // Select Magento2 (index 4)
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 4);
@@ -87,14 +86,24 @@ final class PluginTest extends TestCase
         $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
-        // File should not be overwritten
+        // File should exist and be modified
         self::assertFileExists($castorFile);
-        self::assertSame($original, file_get_contents($castorFile));
+
+        $content = file_get_contents($castorFile);
+
+        // Should contain the original content
+        self::assertStringContainsString('echo "original"', $content);
+
+        // Should contain the new require statement at the top
+        self::assertStringContainsString("require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/", $content);
+
+        // The require should be after <?php tag
+        self::assertMatchesRegularExpression('/^<\?php\s+require __DIR__/m', $content);
 
         $all = $messages();
         self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected notice about existing file');
-        self::assertTrue($this->arrayAnyContains($all, 'Manually add the following line'), 'Expected manual instruction');
-        self::assertTrue($this->arrayAnyContains($all, "require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/"), 'Expected require line for selected recipe');
+        self::assertTrue($this->arrayAnyContains($all, 'Added'), 'Expected confirmation of added recipes');
+        self::assertFalse($this->arrayAnyContains($all, 'Manually add the following line'), 'Should not print manual instructions anymore');
     }
 
     public function testOnPostPackageInstallIgnoresDifferentPackage(): void
@@ -194,22 +203,31 @@ final class PluginTest extends TestCase
         self::assertSame('', trim($all));
     }
 
-    public function testRunInstallerDoesNotOverwriteExistingCastorFile(): void
+    public function testRunInstallerAddsRequiresToExistingCastorFile(): void
     {
         $castorFile = $this->tmpDir . '/castor.php';
         file_put_contents($castorFile, "<?php\n\n// Pre-existing content");
 
-        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 2); // Shopware6
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 8); // Shopware6
 
         $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
         $plugin->onPostPackageInstall($packageEvent);
 
         $content = file_get_contents($castorFile);
-        self::assertSame("<?php\n\n// Pre-existing content", $content, 'Expected castor.php content to remain unchanged');
+
+        // Should preserve the original content
+        self::assertStringContainsString('// Pre-existing content', $content, 'Expected original content to be preserved');
+
+        // Should add the require statement after <?php
+        self::assertStringContainsString("require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/shopware6.php';", $content, 'Expected require for shopware6');
+
+        // The require should be inserted after <?php tag, before the original content
+        self::assertMatchesRegularExpression('/^<\?php\s+require __DIR__.*\/shopware6\.php\';\s+\/\/ Pre-existing content/ms', $content);
 
         $all = $messages();
         self::assertTrue($this->arrayAnyContains($all, 'castor.php already exists'), 'Expected message about existing file');
-        self::assertTrue($this->arrayAnyContains($all, 'Manually add the following lines'), 'Expected manual instruction to add recipes');
+        self::assertTrue($this->arrayAnyContains($all, 'Added'), 'Expected confirmation message');
+        self::assertFalse($this->arrayAnyContains($all, 'Manually add the following lines'), 'Should not show manual instructions anymore');
     }
 
     public function testCreatedMessageUsesPathRelativeToCwd(): void
@@ -325,6 +343,37 @@ final class PluginTest extends TestCase
             $this->arrayAnyContains($allMessages, 'shopware6'),
             'Expected messages to include public recipes'
         );
+    }
+
+    public function testRunInstallerFiltersAlreadyInstalledRecipes(): void
+    {
+        $castorFile = $this->tmpDir . '/castor.php';
+        // Pre-create castor.php with shopware6 already required
+        file_put_contents($castorFile, "<?php\n\nrequire __DIR__ . '/vendor/algoritma/castor-recipes/recipes/shopware6.php';\n\n// Pre-existing content");
+
+        // Try to select shopware6 (index 2) and magento2 (index 4)
+        // Since shopware6 is already installed, it should not be available in the selection
+        // So we need to select magento2 which should now be at a different index
+        [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 8); // Magento2 should be index 3 now (after filtering shopware6)
+
+        $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
+        $plugin->onPostPackageInstall($packageEvent);
+
+        $content = file_get_contents($castorFile);
+
+        // Should preserve the original shopware6 require
+        self::assertStringContainsString("require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/shopware6.php';", $content);
+
+        // Should add the new magento2 require
+        self::assertStringContainsString("require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/symfony.php';", $content);
+
+        // Should contain original content
+        self::assertStringContainsString('// Pre-existing content', $content);
+
+        // Should have found the existing recipe
+        $all = $messages();
+        self::assertTrue($this->arrayAnyContains($all, 'Found 1 recipe(s) already installed'), 'Expected message about already installed recipes');
+        self::assertTrue($this->arrayAnyContains($all, 'shopware6'), 'Expected shopware6 in the list of already installed recipes');
     }
 
     /**
