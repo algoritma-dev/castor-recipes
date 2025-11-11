@@ -36,7 +36,7 @@ default:
     stage: test
     before_script:
         - !reference [ .scripts, ssh ]
-        - apt-get update && apt-get install -y --no-install-recommends git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev && rm -rf /var/lib/apt/lists/*
+        - apt-get update && apt-get install -y --no-install-recommends openssh-client git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev && rm -rf /var/lib/apt/lists/*
         - docker-php-ext-configure intl
         - docker-php-ext-install -j"$(nproc)" intl pdo pdo_mysql pdo_sqlite xml mbstring
         # Install Composer (v2 by default)
