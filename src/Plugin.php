@@ -180,7 +180,9 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $requireStatements = '';
             foreach ($selectedRecipes as $selectedRecipe) {
                 $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
-                $requireStatements .= "require __DIR__ . '/{$relativeRequirePath}';\n";
+                $emptyString = ''; // avoid php cs fixer fix concatenation
+                $dirConstant = '__DIR' . $emptyString . '__'; // Composer evals __DIR__ as a constant, so we need to use a string literal
+                $requireStatements .= "require {$dirConstant} . '/{$relativeRequirePath}';\n";
             }
 
             $content = <<<PHP
@@ -202,8 +204,9 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
             $requireStatements = '';
 
             foreach ($selectedRecipes as $selectedRecipe) {
-                $relativeRequirePath = 'vendor/algoritma/castor-recipes/recipes/' . $selectedRecipe . '.php';
-                $requireLine = "require __DIR__ . '/{$relativeRequirePath}';\n";
+                $emptyString = ''; // avoid php cs fixer fix concatenation
+                $dirConstant = '__DIR' . $emptyString . '__'; // Composer evals __DIR__ as a constant, so we need to use a string literal
+                $requireLine = "require {$dirConstant} . '/vendor/algoritma/castor-recipes/recipes/{$selectedRecipe}.php';";
 
                 // is require already present?
                 if (str_contains($content, $requireLine)) {
