@@ -52,7 +52,7 @@ php:tests:
     extends: .tests_template
     parallel:
         matrix:
-            -   PHP_VERSION: [ "8.2", "8.3", "8.4", "8.5" ]
+            -   PHP_VERSION: [ "8.2", "8.3", "8.4" ]
 
 # Static Analysis job with PHP 8.2
 quality:
