@@ -60,7 +60,8 @@ castor list
 Recipes can run locally or inside a Docker container depending on environment variables.
 
 - Set `CASTOR_DOCKER=1` to use Docker.
-- Docker Compose service to use: `DOCKER_SERVICE` (default: `php`).
+- Docker Compose service to use: `DOCKER_SERVICE` (default: `workspace`).
+- Docker Compose database service to use: `DOCKER_DB_SERVICE` (default: `postgresql`).
 - Compose file: `DOCKER_COMPOSE_FILE` (default: `docker-compose.yml`).
 
 Examples:
