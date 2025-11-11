@@ -13,7 +13,13 @@ function db_drop(?string $user = null, ?string $dbName = null): void
 {
     $user ??= env_value('DB_USER');
     $dbName ??= env_value('DB_NAME');
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
+
     run(dockerize(sprintf('psql -U %s -c "DROP DATABASE IF EXISTS %s"', $user, $dbName)));
+
+    restore_env('DOCKER_SERVICE');
 }
 
 #[AsTask(description: 'Create UUID extension', namespace: 'psql')]
@@ -21,7 +27,13 @@ function uuid_extension_create(?string $user = null, ?string $dbName = null): vo
 {
     $user ??= env_value('DB_USER');
     $dbName ??= env_value('DB_NAME');
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
+
     run(dockerize(sprintf('psql -U %s -c "\c %s" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""', $user, $dbName)));
+
+    restore_env('DOCKER_SERVICE');
 }
 
 #[AsTask(description: 'Create the database', namespace: 'psql')]
@@ -29,8 +41,14 @@ function db_create(?string $user = null, ?string $dbName = null): void
 {
     $user ??= env_value('DB_USER');
     $dbName ??= env_value('DB_NAME');
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
+
     run(dockerize(sprintf('psql -U %s -c "CREATE DATABASE %s"', $user, $dbName)));
     uuid_extension_create($user, $dbName);
+
+    restore_env('DOCKER_SERVICE');
 }
 
 #[AsTask(description: 'Restore database from dump file', namespace: 'psql')]
@@ -38,9 +56,15 @@ function db_restore(string $dump, ?string $user = null, ?string $dbName = null):
 {
     $user ??= env_value('DB_USER');
     $dbName ??= env_value('DB_NAME');
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
+
     db_drop($user);
     db_create($user);
     run(dockerize(sprintf('cat %s | psql -U %s -d %s', $dump, $user, $dbName)));
+
+    restore_env('DOCKER_SERVICE');
 }
 
 #[AsTask(name: 'dbbackup', description: 'Backup the database', namespace: 'psql')]
@@ -49,7 +73,11 @@ function db_backup(?string $user = null, ?string $dbName = null): void
     $user ??= env_value('DB_USER');
     $dbName ??= env_value('DB_NAME');
     $dumpfile = date('Ymd') . '_' . env_value('DB_NAME') . '.sql';
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
     run(dockerize(sprintf('pg_dump -U %s %s > %s', $user, $dbName, $dumpfile)));
+    restore_env('DOCKER_SERVICE');
 }
 
 #[AsTask(name: 'db-tune', description: 'Tune database performance', namespace: 'psql')]
@@ -59,6 +87,10 @@ function db_tune(?string $dbHost = null, ?string $user = null, ?string $dbPass =
     $user ??= env_value('DB_USER');
     $dbPass ??= env_value('DB_PASS');
     $dbName ??= env_value('DB_NAME');
+
+    $dbService ??= env_value('DOCKER_SERVICE', 'postgresql');
+
+    set_env('DOCKER_SERVICE', $dbService);
     run(dockerize(sprintf(
         '/usr/local/bin/postgresqltuner.pl --host=%s --database=%s --user=%s --password=%s',
         $dbHost,
@@ -66,4 +98,5 @@ function db_tune(?string $dbHost = null, ?string $user = null, ?string $dbPass =
         $user,
         $dbPass
     )));
+    restore_env('DOCKER_SERVICE');
 }

@@ -5,7 +5,12 @@
  * These rules will be added to default rules or will override them if the same key already exists.
  */
 
-$additionalRules = [];
+// Force PHPUnit assertions to use `self::` (not `static::`)
+$additionalRules = [
+    'php_unit_test_case_static_method_calls' => [
+        'call_type' => 'self',
+    ]
+];
 $rulesProvider = new Algoritma\CodingStandards\Rules\CompositeRulesProvider([
     new Algoritma\CodingStandards\Rules\DefaultRulesProvider(),
     new Algoritma\CodingStandards\Rules\RiskyRulesProvider(),

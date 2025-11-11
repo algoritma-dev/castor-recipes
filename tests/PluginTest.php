@@ -257,7 +257,7 @@ final class PluginTest extends TestCase
         $composer->method('getRepositoryManager')->willReturn($repoManager);
 
         $io = $this->createMock(IOInterface::class);
-        $io->expects(static::once())->method('write')->with('<info>Removed</info> recipe requires from castor.php');
+        $io->expects(self::once())->method('write')->with('<info>Removed</info> recipe requires from castor.php');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
@@ -277,7 +277,7 @@ final class PluginTest extends TestCase
         $composer->method('getConfig')->willReturn($config);
 
         $io = $this->createMock(IOInterface::class);
-        $io->expects(static::never())->method('write');
+        $io->expects(self::never())->method('write');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
@@ -299,7 +299,7 @@ final class PluginTest extends TestCase
         $composer->method('getConfig')->willReturn($config);
 
         $io = $this->createMock(IOInterface::class);
-        $io->expects(static::never())->method('write');
+        $io->expects(self::never())->method('write');
 
         $plugin = new Plugin();
         $plugin->uninstall($composer, $io);
