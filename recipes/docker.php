@@ -27,7 +27,7 @@ function docker_compose_restart(string $services = '', string $args = ''): void
 }
 
 #[AsTask(name: 'composer-up', description: 'Up docker compose services', namespace: 'docker')]
-function compose_up(bool $rm = true, bool $build = false, bool $detach = true): void
+function docker_compose_up(bool $rm = true, bool $build = false, bool $detach = true): void
 {
     $command = 'docker compose up';
 
