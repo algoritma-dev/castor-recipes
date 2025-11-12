@@ -9,7 +9,6 @@ workflow:
 stages:
     - test
     - quality
-    - deploy
 
 # Composer cache shared per ref; vendor cached to speed up installs
 default:
@@ -68,9 +67,3 @@ quality:
         - vendor/bin/phpstan analyse
         - vendor/bin/php-cs-fixer fix --dry-run --diff
         - vendor/bin/rector process --dry-run
-
-deploy:
-    stage: deploy
-    script:
-        - apk add curl
-        - 'curl --fail-with-body --header "Job-Token: $CI_JOB_TOKEN" --data branch=main "${CI_API_V4_URL}/projects/66/packages/composer"'
