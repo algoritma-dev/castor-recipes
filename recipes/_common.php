@@ -84,6 +84,10 @@ function dockerize(string $command, ?string $workdir = null, bool $tty = false):
     $service = env_value('DOCKER_SERVICE', 'workspace');
     $compose = env_value('DOCKER_COMPOSE_FILE', 'docker-compose.yml');
 
+    if($workdir === null && env_value('DOCKER_PROJECT_ROOT') !== null) {
+        $workdir = env_value('DOCKER_PROJECT_ROOT');
+    }
+
     $workdirArg = $workdir ? sprintf('--workdir %s', $workdir) : '';
 
     $isRunning = \Castor\capture(sprintf('docker compose -f %s ps -q %s', $compose, $service));
@@ -95,14 +99,14 @@ function dockerize(string $command, ?string $workdir = null, bool $tty = false):
         $compose,
         $cmd,
         $tty ? '-T' : '',
-        $service,
         $workdirArg,
+        $service,
         $command
     );
 }
 
 #[AsTask(description: 'Run an arbitrary command, locally or in Docker', aliases: ['x'])]
-function sh(string $cmd = 'php -v', string $cwd = '.'): void
+function sh(string $cmd = 'php -v', ?string $cwd = null): void
 {
     run(dockerize($cmd, $cwd));
 }
