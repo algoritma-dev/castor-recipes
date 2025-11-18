@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Castor\Attribute\AsArgument;
 use Castor\Attribute\AsTask;
-
-use function Castor\run;
-
 use Symfony\Component\Filesystem\Path;
+
+use function Castor\capture;
+use function Castor\run;
 
 require_once __DIR__ . '/_common.php';
 
@@ -29,32 +29,32 @@ function phpstan_bin(): string
 #[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
 function pre_commit(): void
 {
-    $process = run('git <diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
-    $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
+    $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
+    $modifiedFiles = array_filter(explode("\n", trim($captured)));
     $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
 
     rector(false, $filesArg);
     php_cs_fixer(false, $filesArg);
-    phpstan("analyse --memory-limit=-1 $filesArg");
+    phpstan('analyse --memory-limit=-1');
     tests();
 }
 
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
 function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): void
 {
-    run(dockerize(sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
+    run(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function rector(bool $dryRun = false, string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
+    run(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function phpstan(string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s', phpstan_bin(), $args)));
+    run(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
 }
 
 #[AsTask(description: 'Debug phpunit test', namespace: 'qa')]
@@ -66,7 +66,7 @@ function test_debug(
     bool $debug = true
 ): void {
     $params = build_phpunit_params($config, $filter, $testsuite, $stopOnFailure, $debug);
-    run(dockerize(sprintf('bin/simple-phpunit %s', $params)));
+    run(dockerize(\sprintf('bin/simple-phpunit %s', $params)));
 }
 
 #[AsTask(description: 'Exec JS tests in watch mode', namespace: 'qa')]
@@ -83,11 +83,11 @@ function test_watch(string $prefix = ''): void
 #[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]
 function tests(string $args = ''): void
 {
-    run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
+    run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
 }
 
 /**
- * Costruisce i parametri per PHPUnit
+ * Costruisce i parametri per PHPUnit.
  */
 function build_phpunit_params(
     ?string $config = null,
