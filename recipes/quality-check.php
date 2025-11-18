@@ -27,22 +27,16 @@ function phpstan_bin(): string
 }
 
 #[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
-function pre_commit(string $file = 'bin/precommit'): void
+function pre_commit(): void
 {
-    $file = dirname(\Castor\Helper\PathHelper::getRoot()) . '/' . $file;
-    if (is_file($file) && is_executable($file)) {
-        run(dockerize($file));
-    } else {
-        // Get modified and added files from git
-        $process = run('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
-        $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
-        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
+    $process = run('git <diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
+    $modifiedFiles = array_filter(explode("\n", trim($process->getOutput())));
+    $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
 
-        php_cs_fixer(false, $filesArg);
-        rector(false, $filesArg);
-        phpstan("analyse --memory-limit=-1 $filesArg");
-        tests();
-    }
+    rector(false, $filesArg);
+    php_cs_fixer(false, $filesArg);
+    phpstan("analyse --memory-limit=-1 $filesArg");
+    tests();
 }
 
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
