@@ -34,3 +34,6 @@ Thumbs.db
 # Generated files
 /var/
 /build/
+
+# Aspell personal dictionary
+/.aspell.*.pws

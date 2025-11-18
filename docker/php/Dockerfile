@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libonig-dev \
     libxml2-dev \
+    aspell \
+    aspell-en \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install \
     zip \
     intl \
@@ -20,18 +23,6 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /app
-
-# Copy composer files
-COPY composer.json composer.lock* ./
-
-# Install dependencies
-RUN composer install --no-scripts --no-autoloader
-
-# Copy the rest of the application
-COPY . .
-
-# Generate autoloader
-RUN composer dump-autoload --optimize
 
 # Set up entrypoint
 COPY docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
