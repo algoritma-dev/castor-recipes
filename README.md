@@ -36,6 +36,20 @@ castor completion --help
 ## Installation
 In your existing project:
 
+Add repository source on composer.json:
+
+```
+"repositories": {
+    "algoritma-castor-recipes": {
+        "type": "vcs",
+        "url": "git@gitlab.algoritma.it:algoritma/php-coding-standard.git"
+    }
+}
+```
+
+then run the command
+
+
 ```bash
 composer require --dev algoritma/castor-recipes
 ```
