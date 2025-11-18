@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 use Algoritma\CastorRecipes\Aspell\AspellChecker;
 use Castor\Attribute\AsTask;
-
+use Castor\Helper\PathHelper;
 use function Castor\capture;
-use function Castor\Helper\PathHelper;
 use function Castor\io;
 
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
