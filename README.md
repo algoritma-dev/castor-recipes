@@ -35,7 +35,7 @@ castor completion --help
 
 ## Additional Recipes
 - **Spell Checking** (`recipes/_aspell.php`) - Comprehensive spell checking for text files and PHP code
-- **Quality Checks** (`recipes/quality-check.php`) - Code quality tools integration (requires `spatie/phpunit-watcher` for watch mode)
+- **Quality Checks** (`recipes/quality-check.php`) - Code quality tools integration
 - **Docker** (`recipes/docker.php`) - Docker container management tasks
 - **MySQL/PostgreSQL** (`recipes/mysql.php`, `recipes/postgresql.php`) - Database management tasks
 
@@ -186,16 +186,6 @@ castor aspell:check-all --files="$STAGED_FILES" || exit 1
 ## Quality Checks Recipe
 
 The `quality-check.php` recipe provides tasks for running code quality tools and tests.
-
-### Watch Mode for Tests
-
-To use the `qa:js-test` task with watch mode functionality, you need to install:
-
-```bash
-composer require spatie/phpunit-watcher --dev
-```
-
-This enables automatic re-running of tests when files change.
 
 ## Development
 
