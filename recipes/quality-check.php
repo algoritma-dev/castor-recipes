@@ -36,7 +36,7 @@ function pre_commit(): void
     rector(false, $filesArg);
     php_cs_fixer(false, $filesArg);
     phpstan('analyse --memory-limit=-1');
-    aspell_check_all();
+    aspell_check_all(files: $filesArg);
     tests();
 }
 
@@ -72,7 +72,7 @@ function test_debug(
     bool $debug = true
 ): void {
     $params = build_phpunit_params($config, $filter, $testsuite, $stopOnFailure, $debug);
-    run(dockerize(\sprintf('bin/simple-phpunit %s', $params)));
+    run(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
 }
 
 #[AsTask(description: 'Exec JS tests in watch mode', namespace: 'qa')]

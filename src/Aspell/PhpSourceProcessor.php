@@ -94,8 +94,17 @@ final class PhpSourceProcessor implements TextProcessorInterface
                 case \T_FUNCTION:
                     $name = $this->getNextIdentifier($tokens, $i);
                     // Skip magic methods
-                    if ($name && \strlen($name) > 2 && ! str_starts_with($name, '__')) {
+                    if ($name && \strlen($name) > 2 && ! $this->isBuiltinFunction($name)) {
                         $this->addSplitWords($words, $name);
+                    }
+                    break;
+
+                    // Extract function calls (to check if they are user-defined)
+                case \T_STRING:
+                    // Check if this is a function call (next non-whitespace token is '(')
+                    $nextToken = $this->peekNextNonWhitespace($tokens, $i);
+                    if ($nextToken === '(' && ! $this->isBuiltinFunction($tokenValue)) {
+                        $this->addSplitWords($words, $tokenValue);
                     }
                     break;
 
@@ -171,12 +180,17 @@ final class PhpSourceProcessor implements TextProcessorInterface
         ];
 
         foreach ($matches[0] as $token) {
+            // Skip PHP built-in functions
+            if ($this->isBuiltinFunction($token)) {
+                continue;
+            }
+
             // Check if it's a camelCase/PascalCase identifier (contains uppercase after lowercase)
             if (preg_match('/[a-z][A-Z]/', $token)) {
                 // Split it like we do for identifiers
                 $splitWords = $this->splitIdentifier($token);
                 foreach ($splitWords as $word) {
-                    if (! \in_array($word, $phpReservedWords, true) && \strlen($word) > 2) {
+                    if (! \in_array($word, $phpReservedWords, true) && \strlen($word) > 2 && ! $this->isBuiltinFunction($word)) {
                         $words[] = $word;
                     }
                 }
@@ -262,5 +276,56 @@ final class PhpSourceProcessor implements TextProcessorInterface
                 $words[] = $word;
             }
         }
+    }
+
+    /**
+     * Check if the next non-whitespace token matches expected value.
+     *
+     * @param list<mixed> $tokens
+     */
+    private function peekNextNonWhitespace(array $tokens, int $currentIndex): ?string
+    {
+        $tokensCount = \count($tokens);
+
+        for ($i = $currentIndex + 1; $i < $tokensCount; ++$i) {
+            $token = $tokens[$i];
+
+            // Handle single-char tokens
+            if (! \is_array($token)) {
+                return $token;
+            }
+
+            [$tokenId] = $token;
+
+            // Skip whitespace
+            if ($tokenId === \T_WHITESPACE) {
+                continue;
+            }
+
+            // Return null if we hit something else
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a function is a PHP built-in function.
+     */
+    private function isBuiltinFunction(string $functionName): bool
+    {
+        if (str_starts_with($functionName, '__')) {
+            return true;
+        }
+
+        // Use get_defined_functions to check if it's a built-in function
+        static $builtinFunctions = null;
+
+        if ($builtinFunctions === null) {
+            $defined = get_defined_functions();
+            $builtinFunctions = array_flip(array_map(strtolower(...), $defined['internal']));
+        }
+
+        return isset($builtinFunctions[strtolower($functionName)]);
     }
 }

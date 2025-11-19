@@ -6,62 +6,70 @@ use Algoritma\CastorRecipes\Aspell\SpellChecker;
 use Castor\Attribute\AsTask;
 use Castor\Helper\PathHelper;
 
+use function Castor\exit_code;
 use function Castor\io;
+use function Castor\run;
 
 require __DIR__ . '/../vendor/autoload.php';
 
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
-function aspell_check_text(string $lang = 'en'): int
+function aspell_check_text(string $lang = 'en'): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
 
-        return 1;
+        return;
     }
 
     io()->title('Checking text files for spelling errors');
 
     $errors = $checker->checkTextFiles();
 
-    return displayResults($errors);
+    displayResults($errors);
 }
 
 #[AsTask(name: 'check-code', namespace: 'aspell', description: 'Find spelling mistakes in PHP code identifiers')]
-function aspell_check_code(string $lang = 'en'): int
+function aspell_check_code(string $lang = 'en'): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
 
-        return 1;
+        return;
     }
 
     io()->title('Checking PHP code for spelling errors');
 
     $errors = $checker->checkPhpCode();
 
-    return displayResults($errors);
+    displayResults($errors);
 }
 
 #[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)')]
-function aspell_check_all(string $lang = 'en'): int
+function aspell_check_all(string $lang = 'en', string $files = ''): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
 
-        return 1;
+        return;
     }
 
-    io()->title('Checking all files for spelling errors');
+    $specificFiles = $files !== '' ? array_filter(explode(' ', $files)) : [];
 
-    $errors = $checker->checkAll();
+    if ($specificFiles !== []) {
+        io()->title(\sprintf('Checking %d file(s) for spelling errors', \count($specificFiles)));
+    } else {
+        io()->title('Checking all files for spelling errors');
+    }
 
-    return displayResults($errors);
+    $errors = $checker->checkAll($specificFiles);
+
+    displayResults($errors);
 }
 
 #[AsTask(name: 'add-word', namespace: 'aspell', description: 'Add a word to the personal dictionary')]
@@ -117,12 +125,12 @@ function aspell_init(string $lang = 'en'): void
  *
  * @param array<string, list<array{word: string, context: list<string>}>> $errors
  */
-function displayResults(array $errors): int
+function displayResults(array $errors): void
 {
     if ($errors === []) {
         io()->success('No spelling errors found!');
 
-        return 0;
+        return;
     }
 
     $totalErrors = 0;
@@ -142,11 +150,11 @@ function displayResults(array $errors): int
     }
 
     io()->writeln('');
-    io()->warning(\sprintf('Found %d potential spelling error(s) in %d file(s)', $totalErrors, \count($errors)));
+    io()->error(\sprintf('Found %d potential spelling error(s) in %d file(s)', $totalErrors, \count($errors)));
     io()->note([
         'To add a word to your personal dictionary: castor aspell:add-word <word>',
         'To fix errors interactively: aspell check <filename>',
     ]);
 
-    return 1;
+    exit_code(run('exit 1'));
 }

@@ -49,11 +49,18 @@ final readonly class SpellChecker
      * Check text files (Markdown, txt, YAML, JSON translation files).
      *
      * @param list<string> $patterns
+     * @param list<string> $specificFiles
      *
      * @return array<string, list<array{word: string, context: list<string>}>>
      */
-    public function checkTextFiles(array $patterns = ['*.md', '*.txt', 'messages.*.yaml', 'messages.*.yml', 'messages.*.json']): array
+    public function checkTextFiles(array $patterns = ['*.md', '*.txt', 'messages.*.yaml', 'messages.*.yml', 'messages.*.json'], array $specificFiles = []): array
     {
+        if ($specificFiles !== []) {
+            $files = $this->filterFilesByPatterns($specificFiles, $patterns);
+
+            return $this->checkSpecificFiles($files, false);
+        }
+
         $finder = $this->createFinder($patterns);
 
         return $this->checkFiles($finder, false);
@@ -63,11 +70,18 @@ final readonly class SpellChecker
      * Check PHP code using custom processor.
      *
      * @param list<string> $patterns
+     * @param list<string> $specificFiles
      *
      * @return array<string, list<array{word: string, context: list<string>}>>
      */
-    public function checkPhpCode(array $patterns = ['*.php']): array
+    public function checkPhpCode(array $patterns = ['*.php'], array $specificFiles = []): array
     {
+        if ($specificFiles !== []) {
+            $files = $this->filterFilesByPatterns($specificFiles, $patterns);
+
+            return $this->checkSpecificFiles($files, true);
+        }
+
         $finder = $this->createFinder($patterns);
 
         return $this->checkFiles($finder, true);
@@ -76,12 +90,14 @@ final readonly class SpellChecker
     /**
      * Check all files (both text and code).
      *
+     * @param list<string> $specificFiles
+     *
      * @return array<string, list<array{word: string, context: list<string>}>>
      */
-    public function checkAll(): array
+    public function checkAll(array $specificFiles = []): array
     {
-        $textErrors = $this->checkTextFiles();
-        $codeErrors = $this->checkPhpCode();
+        $textErrors = $this->checkTextFiles(specificFiles: $specificFiles);
+        $codeErrors = $this->checkPhpCode(specificFiles: $specificFiles);
 
         return array_merge($textErrors, $codeErrors);
     }
@@ -164,6 +180,68 @@ final readonly class SpellChecker
         }
 
         return $finder;
+    }
+
+    /**
+     * Filter files by patterns using fnmatch.
+     *
+     * @param list<string> $files
+     * @param list<string> $patterns
+     *
+     * @return list<string>
+     */
+    private function filterFilesByPatterns(array $files, array $patterns): array
+    {
+        $matchingFiles = [];
+        foreach ($files as $file) {
+            if (! file_exists($file)) {
+                continue;
+            }
+
+            $baseName = basename($file);
+            foreach ($patterns as $pattern) {
+                if (fnmatch($pattern, $baseName)) {
+                    $matchingFiles[] = $file;
+                    break;
+                }
+            }
+        }
+
+        return $matchingFiles;
+    }
+
+    /**
+     * Check specific files directly (without Finder).
+     *
+     * @param list<string> $files
+     *
+     * @return array<string, list<array{word: string, context: list<string>}>>
+     */
+    private function checkSpecificFiles(array $files, bool $isPhpCode): array
+    {
+        if ($files === []) {
+            return [];
+        }
+
+        // Create custom handler to collect misspellings
+        $handler = new MisspellingCollectorHandler($this->projectRoot);
+
+        // Create MisspellingFinder with or without processor
+        $textProcessor = $isPhpCode ? $this->phpProcessor : null;
+        $misspellingFinder = new MisspellingFinder($this->spellChecker, $handler, $textProcessor);
+
+        // Check each file
+        foreach ($files as $filePath) {
+            $content = file_get_contents($filePath);
+            if ($content === false) {
+                continue;
+            }
+
+            $text = new Text($content, ['file' => $filePath]);
+            $misspellingFinder->find($text, [$this->getAspellLanguageCode()]);
+        }
+
+        return $handler->getErrors();
     }
 
     /**

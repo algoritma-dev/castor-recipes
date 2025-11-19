@@ -25,9 +25,9 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('name', $content);
-        $this->assertStringContainsString('product', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('name', $content);
+        self::assertStringContainsString('product', $content);
     }
 
     public function testExtractsClassName(): void
@@ -38,8 +38,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('manager', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('manager', $content);
     }
 
     public function testExtractsInterfaceName(): void
@@ -50,8 +50,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('interface', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('interface', $content);
     }
 
     public function testExtractsMethodNames(): void
@@ -62,9 +62,9 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('get', $content);
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('data', $content);
+        self::assertStringContainsString('get', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('data', $content);
     }
 
     public function testSkipsMagicMethods(): void
@@ -75,7 +75,7 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringNotContainsString('construct', $content);
+        self::assertStringNotContainsString('construct', $content);
     }
 
     public function testExtractsCommentsWords(): void
@@ -86,8 +86,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('comment', $content);
-        $this->assertStringContainsString('misspeling', $content);
+        self::assertStringContainsString('comment', $content);
+        self::assertStringContainsString('misspeling', $content);
     }
 
     public function testExtractsDocComments(): void
@@ -98,8 +98,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('documentation', $content);
-        $this->assertStringContainsString('erors', $content);
+        self::assertStringContainsString('documentation', $content);
+        self::assertStringContainsString('erors', $content);
     }
 
     public function testSkipsPhpReservedWords(): void
@@ -110,11 +110,11 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringNotContainsString('array', $content);
-        $this->assertStringNotContainsString('iterable', $content);
-        $this->assertStringContainsString('function', $content);
-        $this->assertStringContainsString('returns', $content);
-        $this->assertStringContainsString('objects', $content);
+        self::assertStringNotContainsString('array', $content);
+        self::assertStringNotContainsString('iterable', $content);
+        self::assertStringContainsString('function', $content);
+        self::assertStringContainsString('returns', $content);
+        self::assertStringContainsString('objects', $content);
     }
 
     public function testSplitsCamelCaseInComments(): void
@@ -125,10 +125,10 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('misspelling', $content);
-        $this->assertStringContainsString('interface', $content);
-        $this->assertStringContainsString('handles', $content);
-        $this->assertStringContainsString('errors', $content);
+        self::assertStringContainsString('misspelling', $content);
+        self::assertStringContainsString('interface', $content);
+        self::assertStringContainsString('handles', $content);
+        self::assertStringContainsString('errors', $content);
     }
 
     public function testHandlesSnakeCase(): void
@@ -139,9 +139,9 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('name', $content);
-        $this->assertStringContainsString('data', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('name', $content);
+        self::assertStringContainsString('data', $content);
     }
 
     public function testSkipsShortVariables(): void
@@ -153,7 +153,7 @@ final class PhpSourceProcessorTest extends TestCase
         $content = $processedText->getContent();
 
         // Short variables (2 chars or less) should be skipped
-        $this->assertStringNotContainsString('id', $content);
+        self::assertStringNotContainsString('id', $content);
     }
 
     public function testExtractsEnumNames(): void
@@ -164,8 +164,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('status', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('status', $content);
     }
 
     public function testExtractsTraitNames(): void
@@ -176,8 +176,8 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringContainsString('user', $content);
-        $this->assertStringContainsString('helper', $content);
+        self::assertStringContainsString('user', $content);
+        self::assertStringContainsString('helper', $content);
     }
 
     public function testRemovesPhpDocTags(): void
@@ -188,9 +188,9 @@ final class PhpSourceProcessorTest extends TestCase
         $processedText = $this->processor->process($text);
         $content = $processedText->getContent();
 
-        $this->assertStringNotContainsString('@param', $content);
-        $this->assertStringNotContainsString('@return', $content);
-        $this->assertStringNotContainsString('string', $content); // PHP reserved word
-        $this->assertStringNotContainsString('void', $content); // PHP reserved word
+        self::assertStringNotContainsString('@param', $content);
+        self::assertStringNotContainsString('@return', $content);
+        self::assertStringNotContainsString('string', $content); // PHP reserved word
+        self::assertStringNotContainsString('void', $content); // PHP reserved word
     }
 }
