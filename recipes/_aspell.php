@@ -10,7 +10,9 @@ use function Castor\exit_code;
 use function Castor\io;
 use function Castor\run;
 
-if (is_file(__DIR__ . '/../../../vendor/autoload.php')) {
+if (is_file(__DIR__ . '/../../../../vendor/autoload.php')) {
+    require_once __DIR__ . '/../../../../vendor/autoload.php';
+} elseif (is_file(__DIR__ . '/../../../vendor/autoload.php')) {
     require_once __DIR__ . '/../../../vendor/autoload.php';
 } else {
     require_once __DIR__ . '/../vendor/autoload.php';
