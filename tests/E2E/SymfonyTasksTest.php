@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CastorRecipes\Tests\E2E;
+namespace Algoritma\CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 

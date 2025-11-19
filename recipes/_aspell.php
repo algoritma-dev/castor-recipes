@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-use Algoritma\CastorRecipes\Aspell\AspellChecker;
+use Algoritma\CastorRecipes\Aspell\SpellChecker;
 use Castor\Attribute\AsTask;
 use Castor\Helper\PathHelper;
 use function Castor\capture;
 use function Castor\io;
 
+require __DIR__ . '/../vendor/autoload.php';
+
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
 function aspell_check_text(string $lang = 'en'): int
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (!$checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
@@ -28,7 +30,7 @@ function aspell_check_text(string $lang = 'en'): int
 #[AsTask(name: 'check-code', namespace: 'aspell', description: 'Find spelling mistakes in PHP code identifiers')]
 function aspell_check_code(string $lang = 'en'): int
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (!$checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
@@ -45,7 +47,7 @@ function aspell_check_code(string $lang = 'en'): int
 #[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)')]
 function aspell_check_all(string $lang = 'en'): int
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (!$checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
@@ -62,7 +64,7 @@ function aspell_check_all(string $lang = 'en'): int
 #[AsTask(name: 'add-word', namespace: 'aspell', description: 'Add a word to the personal dictionary')]
 function aspell_add_word(string $word, string $lang = 'en'): void
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     $checker->initPersonalDictionary();
 
@@ -76,7 +78,7 @@ function aspell_add_word(string $word, string $lang = 'en'): void
 #[AsTask(name: 'show-dict', namespace: 'aspell', description: 'Show words in personal dictionary')]
 function aspell_show_dictionary(string $lang = 'en'): void
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     $words = $checker->getPersonalDictionaryWords();
 
@@ -92,7 +94,7 @@ function aspell_show_dictionary(string $lang = 'en'): void
 #[AsTask(name: 'init', namespace: 'aspell', description: 'Initialize personal dictionary')]
 function aspell_init(string $lang = 'en'): void
 {
-    $checker = new AspellChecker(PathHelper::getRoot(), $lang);
+    $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
     if (!$checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
@@ -108,7 +110,7 @@ function aspell_init(string $lang = 'en'): void
 /**
  * Display spell check results
  *
- * @param array<string, array<string>> $errors
+ * @param array<string, array<array{word: string, context: array<string>}>> $errors
  */
 function displayResults(array $errors): int
 {
@@ -118,10 +120,19 @@ function displayResults(array $errors): int
     }
 
     $totalErrors = 0;
-    foreach ($errors as $file => $words) {
+    foreach ($errors as $file => $errorsList) {
         io()->section($file);
-        io()->listing($words);
-        $totalErrors += count($words);
+
+        $formattedErrors = [];
+        foreach ($errorsList as $error) {
+            $word = $error['word'];
+            $contexts = $error['context'];
+            $contextStr = !empty($contexts) ? ' (' . implode(', ', $contexts) . ')' : '';
+            $formattedErrors[] = $word . $contextStr;
+        }
+
+        io()->listing($formattedErrors);
+        $totalErrors += count($errorsList);
     }
 
     io()->writeln('');

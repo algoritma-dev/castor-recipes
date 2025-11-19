@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CastorRecipes\Tests;
+namespace Algoritma\CastorRecipes\Tests;
 
 use CastorRecipes\Plugin;
 use Composer\Composer;

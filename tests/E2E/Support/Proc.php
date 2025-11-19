@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CastorRecipes\Tests\E2E\Support;
+namespace Algoritma\CastorRecipes\Tests\E2E\Support;
 
 final readonly class Proc
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CastorRecipes;
+namespace Algoritma\CastorRecipes;
 
 use Composer\Composer;
 use Composer\DependencyResolver\Operation\InstallOperation;

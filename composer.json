@@ -14,7 +14,8 @@
     "require": {
         "php": "^8.2",
         "composer-plugin-api": "^2.0",
-        "symfony/filesystem": "^6.0|^7.0"
+        "symfony/filesystem": "^6.0|^7.0",
+        "tigitz/php-spellchecker": "*"
     },
     "require-dev": {
         "algoritma/php-coding-standard": "^3.0",
@@ -25,17 +26,17 @@
     "repositories": {
         "algoritma-php-cs": {
             "type": "vcs",
-            "url": "git@gitlab.algoritma.it:algoritma/php-coding-standard.git"
+            "url": "https://phpcs:glpat-Hw9asjC2Q3gX4Cy9PB9k@gitlab.algoritma.it/algoritma/php-coding-standard.git"
         }
     },
     "autoload": {
         "psr-4": {
-            "CastorRecipes\\": "src/"
+            "Algoritma\\CastorRecipes\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "CastorRecipes\\Tests\\": "tests/"
+            "Algoritma\\CastorRecipes\\Tests\\": "tests/"
         }
     },
     "extra": {
