@@ -91,9 +91,6 @@ function tests(string $args = ''): void
     run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
 }
 
-/**
- * Costruisce i parametri per PHPUnit.
- */
 function build_phpunit_params(
     ?string $config = null,
     ?string $filter = null,
