@@ -23,10 +23,10 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $errors = $handler->getErrors();
 
-        $this->assertArrayHasKey('test.php', $errors);
-        $this->assertCount(2, $errors['test.php']);
-        $this->assertEquals('tset', $errors['test.php'][0]['word']);
-        $this->assertEquals('eror', $errors['test.php'][1]['word']);
+        self::assertArrayHasKey('test.php', $errors);
+        self::assertCount(2, $errors['test.php']);
+        self::assertEquals('tset', $errors['test.php'][0]['word']);
+        self::assertEquals('eror', $errors['test.php'][1]['word']);
     }
 
     public function testHandleGroupsByFile(): void
@@ -46,10 +46,10 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $errors = $handler->getErrors();
 
-        $this->assertArrayHasKey('file1.php', $errors);
-        $this->assertArrayHasKey('file2.php', $errors);
-        $this->assertCount(1, $errors['file1.php']);
-        $this->assertCount(1, $errors['file2.php']);
+        self::assertArrayHasKey('file1.php', $errors);
+        self::assertArrayHasKey('file2.php', $errors);
+        self::assertCount(1, $errors['file1.php']);
+        self::assertCount(1, $errors['file2.php']);
     }
 
     public function testHandleStripsProjectRoot(): void
@@ -64,8 +64,8 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $errors = $handler->getErrors();
 
-        $this->assertArrayHasKey('src/subfolder/test.php', $errors);
-        $this->assertArrayNotHasKey('/home/project/src/subfolder/test.php', $errors);
+        self::assertArrayHasKey('src/subfolder/test.php', $errors);
+        self::assertArrayNotHasKey('/home/project/src/subfolder/test.php', $errors);
     }
 
     public function testHandleWithUnknownFile(): void
@@ -80,7 +80,7 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $errors = $handler->getErrors();
 
-        $this->assertArrayHasKey('unknown', $errors);
+        self::assertArrayHasKey('unknown', $errors);
     }
 
     public function testResetClearsErrors(): void
@@ -92,10 +92,10 @@ final class MisspellingCollectorHandlerTest extends TestCase
         ];
 
         $handler->handle($misspellings);
-        $this->assertNotEmpty($handler->getErrors());
+        self::assertNotEmpty($handler->getErrors());
 
         $handler->reset();
-        $this->assertEmpty($handler->getErrors());
+        self::assertEmpty($handler->getErrors());
     }
 
     public function testHandleEmptyIterable(): void
@@ -104,7 +104,7 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $handler->handle([]);
 
-        $this->assertEmpty($handler->getErrors());
+        self::assertEmpty($handler->getErrors());
     }
 
     public function testHandleAccumulatesMultipleCalls(): void
@@ -124,6 +124,6 @@ final class MisspellingCollectorHandlerTest extends TestCase
 
         $errors = $handler->getErrors();
 
-        $this->assertCount(2, $errors['test.php']);
+        self::assertCount(2, $errors['test.php']);
     }
 }

@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for legacy AspellChecker class
- * Note: This class is being replaced by SpellChecker but kept for backward compatibility
+ * Note: This class is being replaced by SpellChecker but kept for backward compatibility.
  */
 final class AspellCheckerTest extends TestCase
 {
@@ -28,19 +28,9 @@ final class AspellCheckerTest extends TestCase
         }
     }
 
-    private function removeDirectory(string $dir): void
-    {
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
-        }
-        rmdir($dir);
-    }
-
     public function testIsAspellInstalled(): void
     {
-        $this->markTestSkipped('AspellChecker requires Castor container to be initialized');
+        self::markTestSkipped('AspellChecker requires Castor container to be initialized');
     }
 
     public function testInitPersonalDictionary(): void
@@ -49,10 +39,10 @@ final class AspellCheckerTest extends TestCase
         $checker->initPersonalDictionary();
 
         $dictPath = $this->tempDir . '/.aspell.en.pws';
-        $this->assertFileExists($dictPath);
+        self::assertFileExists($dictPath);
 
         $content = file_get_contents($dictPath);
-        $this->assertStringStartsWith('personal_ws-1.1 en', $content);
+        self::assertStringStartsWith('personal_ws-1.1 en', $content);
     }
 
     public function testAddToPersonalDictionary(): void
@@ -62,10 +52,10 @@ final class AspellCheckerTest extends TestCase
 
         $result = $checker->addToPersonalDictionary('testword');
 
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         $words = $checker->getPersonalDictionaryWords();
-        $this->assertContains('testword', $words);
+        self::assertContains('testword', $words);
     }
 
     public function testAddDuplicateWordToPersonalDictionary(): void
@@ -76,12 +66,12 @@ final class AspellCheckerTest extends TestCase
         $checker->addToPersonalDictionary('testword');
         $result = $checker->addToPersonalDictionary('testword');
 
-        $this->assertFalse($result);
+        self::assertFalse($result);
 
         $words = $checker->getPersonalDictionaryWords();
         // Count occurrences of 'testword' - should be exactly 1
-        $count = count(array_filter($words, fn(string $w): bool => $w === 'testword'));
-        $this->assertEquals(1, $count);
+        $count = \count(array_filter($words, fn (string $w): bool => $w === 'testword'));
+        self::assertEquals(1, $count);
     }
 
     public function testGetPersonalDictionaryWords(): void
@@ -95,10 +85,10 @@ final class AspellCheckerTest extends TestCase
 
         $words = $checker->getPersonalDictionaryWords();
 
-        $this->assertCount(3, $words);
-        $this->assertContains('apple', $words);
-        $this->assertContains('banana', $words);
-        $this->assertContains('cherry', $words);
+        self::assertCount(3, $words);
+        self::assertContains('apple', $words);
+        self::assertContains('banana', $words);
+        self::assertContains('cherry', $words);
     }
 
     public function testGetPersonalDictionaryWordsReturnsEmptyArrayWhenNoDictionary(): void
@@ -107,7 +97,7 @@ final class AspellCheckerTest extends TestCase
 
         $words = $checker->getPersonalDictionaryWords();
 
-        $this->assertEmpty($words);
+        self::assertEmpty($words);
     }
 
     public function testPersonalDictionaryWordsAreSorted(): void
@@ -121,21 +111,31 @@ final class AspellCheckerTest extends TestCase
 
         $words = $checker->getPersonalDictionaryWords();
 
-        $this->assertEquals(['apple', 'banana', 'zebra'], $words);
+        self::assertEquals(['apple', 'banana', 'zebra'], $words);
     }
 
     public function testCheckPhpCodeWithValidCode(): void
     {
-        $this->markTestSkipped('AspellChecker requires Castor container to be initialized');
+        self::markTestSkipped('AspellChecker requires Castor container to be initialized');
     }
 
     public function testCheckTextFilesWithValidText(): void
     {
-        $this->markTestSkipped('AspellChecker requires Castor container to be initialized');
+        self::markTestSkipped('AspellChecker requires Castor container to be initialized');
     }
 
     public function testCheckAllCombinesBothChecks(): void
     {
-        $this->markTestSkipped('AspellChecker requires Castor container to be initialized');
+        self::markTestSkipped('AspellChecker requires Castor container to be initialized');
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+        }
+        rmdir($dir);
     }
 }

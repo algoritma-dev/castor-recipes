@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Algoritma\CastorRecipes\Tests\Unit\Aspell;
 
 use Algoritma\CastorRecipes\Aspell\AspellWrapper;
+use PhpSpellcheck\MisspellingInterface;
 use PHPUnit\Framework\TestCase;
 
 final class AspellWrapperTest extends TestCase
@@ -22,7 +23,7 @@ final class AspellWrapperTest extends TestCase
         if (is_dir($this->tempDir)) {
             $files = glob($this->tempDir . '/*');
             if ($files !== false) {
-                array_map('unlink', $files);
+                array_map(unlink(...), $files);
             }
             @rmdir($this->tempDir);
         }
@@ -33,10 +34,10 @@ final class AspellWrapperTest extends TestCase
         $aspell = new AspellWrapper();
         $misspellings = $aspell->check('This is a tset with misspeling', ['en_US'], []);
 
-        $words = array_map(fn(\PhpSpellcheck\MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
+        $words = array_map(fn (MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
 
-        $this->assertContains('tset', $words);
-        $this->assertContains('misspeling', $words);
+        self::assertContains('tset', $words);
+        self::assertContains('misspeling', $words);
     }
 
     public function testCheckWithPersonalDictionary(): void
@@ -50,11 +51,11 @@ final class AspellWrapperTest extends TestCase
 
         $misspellings = $aspell->check('This is a tset with misspeling', ['en_US'], []);
 
-        $words = array_map(fn(\PhpSpellcheck\MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
+        $words = array_map(fn (MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
 
         // Words in dictionary should not be reported as misspellings
-        $this->assertNotContains('tset', $words);
-        $this->assertNotContains('misspeling', $words);
+        self::assertNotContains('tset', $words);
+        self::assertNotContains('misspeling', $words);
     }
 
     public function testCheckWithMultipleDictionaries(): void
@@ -72,11 +73,11 @@ final class AspellWrapperTest extends TestCase
 
         $misspellings = $aspell->check('This is a tset with misspeling', ['en_US'], []);
 
-        $words = array_map(fn(\PhpSpellcheck\MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
+        $words = array_map(fn (MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
 
         // Words in both dictionaries should not be reported
-        $this->assertNotContains('tset', $words);
-        $this->assertNotContains('misspeling', $words);
+        self::assertNotContains('tset', $words);
+        self::assertNotContains('misspeling', $words);
     }
 
     public function testCheckWithCorrectText(): void
@@ -84,7 +85,7 @@ final class AspellWrapperTest extends TestCase
         $aspell = new AspellWrapper();
         $misspellings = $aspell->check('This is correct text', ['en_US'], []);
 
-        $this->assertEmpty(iterator_to_array($misspellings));
+        self::assertEmpty(iterator_to_array($misspellings));
     }
 
     public function testGetSupportedLanguages(): void
@@ -94,9 +95,9 @@ final class AspellWrapperTest extends TestCase
 
         $languagesArray = iterator_to_array($languages);
 
-        $this->assertContains('en_US', $languagesArray);
-        $this->assertContains('it_IT', $languagesArray);
-        $this->assertContains('fr_FR', $languagesArray);
+        self::assertContains('en_US', $languagesArray);
+        self::assertContains('it_IT', $languagesArray);
+        self::assertContains('fr_FR', $languagesArray);
     }
 
     public function testAddNonExistentDictionary(): void
@@ -106,9 +107,9 @@ final class AspellWrapperTest extends TestCase
 
         // Should not throw exception, just ignore
         $misspellings = $aspell->check('tset', ['en_US'], []);
-        $words = array_map(fn(\PhpSpellcheck\MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
+        $words = array_map(fn (MisspellingInterface $m): string => $m->getWord(), iterator_to_array($misspellings));
 
-        $this->assertContains('tset', $words);
+        self::assertContains('tset', $words);
     }
 
     public function testMisspellingContext(): void
@@ -119,6 +120,6 @@ final class AspellWrapperTest extends TestCase
 
         $misspelling = iterator_to_array($misspellings)[0];
 
-        $this->assertEquals($context, $misspelling->getContext());
+        self::assertEquals($context, $misspelling->getContext());
     }
 }

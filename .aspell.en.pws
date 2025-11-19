@@ -1,7 +1,9 @@
-personal_ws-1.1 en 38
+personal_ws-1.1 en 43
+acm
 aggiorna
 algoritma
 autocompletion
+camelcase
 ccl
 compatibilità
 configurazione
@@ -24,13 +26,16 @@ iterable
 js
 lancia
 macos
+myword
 opzionale
 pathname
 pcov
 pulisci
+readme
 ricarica
 ricerca
 ricostruisce
+sudo
 supervisord
 symlink
 traduzioni

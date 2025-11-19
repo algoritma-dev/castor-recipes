@@ -24,21 +24,11 @@ final class SpellCheckerTest extends TestCase
         }
     }
 
-    private function removeDirectory(string $dir): void
-    {
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
-        }
-        rmdir($dir);
-    }
-
     public function testIsAspellInstalled(): void
     {
         $checker = new SpellChecker($this->tempDir);
 
-        $this->assertTrue($checker->isAspellInstalled());
+        self::assertTrue($checker->isAspellInstalled());
     }
 
     public function testAddToPersonalDictionary(): void
@@ -48,10 +38,10 @@ final class SpellCheckerTest extends TestCase
 
         $result = $checker->addToPersonalDictionary('customword');
 
-        $this->assertTrue($result);
+        self::assertTrue($result);
 
         $words = $checker->getPersonalDictionaryWords();
-        $this->assertContains('customword', $words);
+        self::assertContains('customword', $words);
     }
 
     public function testAddDuplicateWordReturnsFalse(): void
@@ -62,7 +52,7 @@ final class SpellCheckerTest extends TestCase
         $checker->addToPersonalDictionary('customword');
         $result = $checker->addToPersonalDictionary('customword');
 
-        $this->assertFalse($result);
+        self::assertFalse($result);
     }
 
     public function testGetPersonalDictionaryWords(): void
@@ -75,9 +65,9 @@ final class SpellCheckerTest extends TestCase
 
         $words = $checker->getPersonalDictionaryWords();
 
-        $this->assertContains('word1', $words);
-        $this->assertContains('word2', $words);
-        $this->assertCount(2, $words);
+        self::assertContains('word1', $words);
+        self::assertContains('word2', $words);
+        self::assertCount(2, $words);
     }
 
     public function testInitPersonalDictionary(): void
@@ -86,7 +76,7 @@ final class SpellCheckerTest extends TestCase
         $checker->initPersonalDictionary();
 
         $dictPath = $this->tempDir . '/.aspell.en.pws';
-        $this->assertFileExists($dictPath);
+        self::assertFileExists($dictPath);
     }
 
     public function testCheckPhpCodeFindsErrors(): void
@@ -99,8 +89,8 @@ final class SpellCheckerTest extends TestCase
 
         $errors = $checker->checkPhpCode(['*.php']);
 
-        $this->assertNotEmpty($errors);
-        $this->assertArrayHasKey('test.php', $errors);
+        self::assertNotEmpty($errors);
+        self::assertArrayHasKey('test.php', $errors);
     }
 
     public function testCheckTextFilesFindsErrors(): void
@@ -113,8 +103,8 @@ final class SpellCheckerTest extends TestCase
 
         $errors = $checker->checkTextFiles(['*.txt']);
 
-        $this->assertNotEmpty($errors);
-        $this->assertArrayHasKey('test.txt', $errors);
+        self::assertNotEmpty($errors);
+        self::assertArrayHasKey('test.txt', $errors);
     }
 
     public function testCheckAllCombinesBothChecks(): void
@@ -127,7 +117,7 @@ final class SpellCheckerTest extends TestCase
 
         $errors = $checker->checkAll();
 
-        $this->assertGreaterThanOrEqual(2, count($errors));
+        self::assertGreaterThanOrEqual(2, \count($errors));
     }
 
     public function testPersonalDictionaryFiltersErrors(): void
@@ -147,10 +137,10 @@ final class SpellCheckerTest extends TestCase
         $errors = $checker->checkTextFiles(['*.txt']);
 
         // Should be empty or not contain 'customword'
-        if (!empty($errors)) {
+        if ($errors !== []) {
             foreach ($errors as $fileErrors) {
                 $words = array_column($fileErrors, 'word');
-                $this->assertNotContains('customword', $words);
+                self::assertNotContains('customword', $words);
             }
         } else {
             $this->expectNotToPerformAssertions();
@@ -168,6 +158,16 @@ final class SpellCheckerTest extends TestCase
 
         $words = $checker->getPersonalDictionaryWords();
 
-        $this->assertEquals(['apple', 'banana', 'zebra'], $words);
+        self::assertEquals(['apple', 'banana', 'zebra'], $words);
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . '/' . $file;
+            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
+        }
+        rmdir($dir);
     }
 }

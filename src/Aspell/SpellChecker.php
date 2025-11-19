@@ -237,8 +237,11 @@ final readonly class SpellChecker
                 continue;
             }
 
+            // Extract language from filename (e.g., *.it_IT.yml, *.en.yml)
+            $language = $this->extractLanguageFromFilename(pathinfo($filePath, \PATHINFO_BASENAME));
+
             $text = new Text($content, ['file' => $filePath]);
-            $misspellingFinder->find($text, [$this->getAspellLanguageCode()]);
+            $misspellingFinder->find($text, [$language]);
         }
 
         return $handler->getErrors();

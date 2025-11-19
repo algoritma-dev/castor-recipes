@@ -8,22 +8,21 @@ use PhpSpellcheck\Misspelling;
 use PhpSpellcheck\Spellchecker\SpellcheckerInterface;
 
 /**
- * Custom Aspell spellchecker with support for multiple personal dictionaries
+ * Custom Aspell spellchecker with support for multiple personal dictionaries.
  */
 final class AspellWrapper implements SpellcheckerInterface
 {
     /**
-     * @var array<string>
+     * @var list<string>
      */
     private array $personalDictionaries = [];
 
     public function __construct(
         private readonly string $binaryPath = 'aspell',
-    ) {
-    }
+    ) {}
 
     /**
-     * Add a personal dictionary
+     * Add a personal dictionary.
      */
     public function addPersonalDictionary(string $path): void
     {
@@ -58,7 +57,7 @@ final class AspellWrapper implements SpellcheckerInterface
             $misspellings = [];
             foreach ($misspelledWords as $word) {
                 // Skip if word is in any of our dictionaries
-                if (in_array(strtolower($word), $dictionaryWords, true)) {
+                if (\in_array(strtolower($word), $dictionaryWords, true)) {
                     continue;
                 }
 
@@ -77,17 +76,22 @@ final class AspellWrapper implements SpellcheckerInterface
         }
     }
 
+    public function getSupportedLanguages(): iterable
+    {
+        yield from ['en_US', 'en_GB', 'it_IT', 'fr_FR', 'de_DE', 'es_ES'];
+    }
+
     /**
-     * Load words from all personal dictionaries
+     * Load words from all personal dictionaries.
      *
-     * @return array<string>
+     * @return list<string>
      */
     private function loadAllDictionaryWords(): array
     {
         $words = [];
 
         foreach ($this->personalDictionaries as $dictPath) {
-            if (!file_exists($dictPath)) {
+            if (! file_exists($dictPath)) {
                 continue;
             }
 
@@ -97,7 +101,10 @@ final class AspellWrapper implements SpellcheckerInterface
             foreach ($lines as $line) {
                 $line = trim($line);
                 // Skip header line and empty lines
-                if ($line === '' || str_starts_with($line, 'personal_ws-')) {
+                if ($line === '') {
+                    continue;
+                }
+                if (str_starts_with($line, 'personal_ws-')) {
                     continue;
                 }
                 $words[] = strtolower($line);
@@ -105,10 +112,5 @@ final class AspellWrapper implements SpellcheckerInterface
         }
 
         return array_unique($words);
-    }
-
-    public function getSupportedLanguages(): iterable
-    {
-        return ['en_US', 'en_GB', 'it_IT', 'fr_FR', 'de_DE', 'es_ES'];
     }
 }
