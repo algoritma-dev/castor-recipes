@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Castor\Attribute\AsArgument;
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Filesystem\Path;
 
@@ -75,15 +76,10 @@ function test_debug(
     run(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
 }
 
-#[AsTask(description: 'Exec JS tests in watch mode', namespace: 'qa')]
-function test_watch(string $prefix = ''): void
+#[AsTask(name: 'js-test', description: 'Exec JS tests in watch mode', namespace: 'qa')]
+function test_watch(#[AsRawTokens] array $rawTokens = []): void
 {
-    $command = 'npm run test-watch';
-    if ($prefix !== '') {
-        $command .= ' -- --prefix ' . $prefix;
-    }
-
-    run(dockerize($command));
+    run(dockerize(sprintf('%s watch %s', phpunit_bin(true), implode(' ', $rawTokens))));
 }
 
 #[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]

@@ -117,7 +117,11 @@ function php(): string
     return (string) env_value('PHP_BIN', 'php');
 }
 
-function phpunit_bin(): string
+function phpunit_bin(bool $watch = false): string
 {
+    if($watch === true) {
+        return (string) env_value('PHPUNIT_WATCH_BIN', is_file('vendor/bin/phpunit-watch') ? 'vendor/bin/phpunit-watch' : 'bin/phpunit-watch');
+    }
+
     return (string) env_value('PHPUNIT_BIN', is_file('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'bin/phpunit');
 }
