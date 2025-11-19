@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Algoritma\CastorRecipes\Aspell\SpellChecker;
 use Castor\Attribute\AsTask;
 use Castor\Helper\PathHelper;
-use function Castor\capture;
+
 use function Castor\io;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -15,8 +15,9 @@ function aspell_check_text(string $lang = 'en'): int
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
-    if (!$checker->isAspellInstalled()) {
+    if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
+
         return 1;
     }
 
@@ -32,8 +33,9 @@ function aspell_check_code(string $lang = 'en'): int
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
-    if (!$checker->isAspellInstalled()) {
+    if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
+
         return 1;
     }
 
@@ -49,8 +51,9 @@ function aspell_check_all(string $lang = 'en'): int
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
-    if (!$checker->isAspellInstalled()) {
+    if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
+
         return 1;
     }
 
@@ -82,12 +85,13 @@ function aspell_show_dictionary(string $lang = 'en'): void
 
     $words = $checker->getPersonalDictionaryWords();
 
-    if (empty($words)) {
+    if ($words === []) {
         io()->note('Personal dictionary is empty. Use "aspell:add-word" to add words.');
+
         return;
     }
 
-    io()->title(sprintf('Personal Dictionary (%d words)', count($words)));
+    io()->title(\sprintf('Personal Dictionary (%d words)', \count($words)));
     io()->listing($words);
 }
 
@@ -96,8 +100,9 @@ function aspell_init(string $lang = 'en'): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
-    if (!$checker->isAspellInstalled()) {
+    if (! $checker->isAspellInstalled()) {
         io()->error('aspell is not installed. Install it with: sudo apt-get install aspell');
+
         return;
     }
 
@@ -108,14 +113,15 @@ function aspell_init(string $lang = 'en'): void
 }
 
 /**
- * Display spell check results
+ * Display spell check results.
  *
- * @param array<string, array<array{word: string, context: array<string>}>> $errors
+ * @param array<string, list<array{word: string, context: list<string>}>> $errors
  */
 function displayResults(array $errors): int
 {
-    if (empty($errors)) {
+    if ($errors === []) {
         io()->success('No spelling errors found!');
+
         return 0;
     }
 
@@ -127,16 +133,16 @@ function displayResults(array $errors): int
         foreach ($errorsList as $error) {
             $word = $error['word'];
             $contexts = $error['context'];
-            $contextStr = !empty($contexts) ? ' (' . implode(', ', $contexts) . ')' : '';
+            $contextStr = empty($contexts) ? '' : ' (' . implode(', ', $contexts) . ')';
             $formattedErrors[] = $word . $contextStr;
         }
 
         io()->listing($formattedErrors);
-        $totalErrors += count($errorsList);
+        $totalErrors += \count($errorsList);
     }
 
     io()->writeln('');
-    io()->warning(sprintf('Found %d potential spelling error(s) in %d file(s)', $totalErrors, count($errors)));
+    io()->warning(\sprintf('Found %d potential spelling error(s) in %d file(s)', $totalErrors, \count($errors)));
     io()->note([
         'To add a word to your personal dictionary: castor aspell:add-word <word>',
         'To fix errors interactively: aspell check <filename>',

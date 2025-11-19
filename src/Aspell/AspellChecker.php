@@ -26,7 +26,7 @@ final readonly class AspellChecker
      *
      * @return array<string, list<string>>
      */
-    public function checkTextFiles(array $patterns = ['*.md', '*.txt', 'messages.*.yaml', 'messages.*.yml', 'messages.*.json']): array
+    public function checkTextFiles(array $patterns = ['*.md', '*.txt', '*.*.yaml', '*.*.json']): array
     {
         $finder = $this->createFinder($patterns);
 

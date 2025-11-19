@@ -40,16 +40,35 @@ final class PhpSourceProcessor implements TextProcessorInterface
         $tokens = @token_get_all($code);
 
         $words = [];
+        $inAttribute = false;
 
         foreach ($tokens as $i => $iValue) {
             $token = $iValue;
 
-            // Skip non-array tokens (single char operators, etc.)
+            // Handle single-char tokens for attribute closing
             if (! \is_array($token)) {
+                if ($token === '#') {
+                    $inAttribute = true;
+                } elseif ($token === ']' && $inAttribute) {
+                    $inAttribute = false;
+                }
                 continue;
             }
 
             [$tokenId, $tokenValue] = $token;
+
+            // Detect attribute opening with T_ATTRIBUTE token
+            if ($tokenId === \T_ATTRIBUTE) {
+                $inAttribute = true;
+                continue;
+            }
+
+            // Extract string literals from attributes
+            if ($inAttribute && $tokenId === \T_CONSTANT_ENCAPSED_STRING) {
+                $stringValue = trim($tokenValue, '\'"');
+                $this->addWordsFromText($words, $stringValue);
+                continue;
+            }
 
             switch ($tokenId) {
                 // Extract variable names
@@ -103,10 +122,6 @@ final class PhpSourceProcessor implements TextProcessorInterface
 
         for ($i = $currentIndex + 1; $i < $tokensCount; ++$i) {
             $token = $tokens[$i];
-
-            if (! \is_array($token)) {
-                continue;
-            }
 
             [$tokenId, $tokenValue] = $token;
 
@@ -229,6 +244,23 @@ final class PhpSourceProcessor implements TextProcessorInterface
         $splitWords = $this->splitIdentifier($identifier);
         foreach ($splitWords as $word) {
             $words[] = $word;
+        }
+    }
+
+    /**
+     * Extract words from natural text (used for attribute strings).
+     *
+     * @param list<string> $words
+     */
+    private function addWordsFromText(array &$words, string $text): void
+    {
+        // Split by spaces, hyphens, underscores
+        $textWords = preg_split('/[\s\-_]+/', $text);
+        foreach ($textWords as $word) {
+            $word = strtolower(trim($word));
+            if (\strlen($word) > 2) {
+                $words[] = $word;
+            }
         }
     }
 }

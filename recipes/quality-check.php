@@ -36,6 +36,7 @@ function pre_commit(): void
     rector(false, $filesArg);
     php_cs_fixer(false, $filesArg);
     phpstan('analyse --memory-limit=-1');
+    aspell_check_all();
     tests();
 }
 
