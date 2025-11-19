@@ -40,7 +40,7 @@
         }
     },
     "extra": {
-        "class": "CastorRecipes\\Plugin"
+        "class": "Algoritma\\CastorRecipes\\Plugin"
     },
     "config": {
         "sort-packages": true,
