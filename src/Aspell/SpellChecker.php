@@ -263,19 +263,39 @@ final readonly class SpellChecker
         foreach ($finder as $file) {
             $content = $file->getContents();
 
+            // Extract language from filename (e.g., *.it_IT.yml, *.en.yml)
+            $language = $this->extractLanguageFromFilename($file->getFilename());
+
             $text = new Text($content, ['file' => $file->getRealPath()]);
-            $misspellingFinder->find($text, [$this->getAspellLanguageCode()]);
+            $misspellingFinder->find($text, [$language]);
         }
 
         return $handler->getErrors();
     }
 
+    private function extractLanguageFromFilename(string $filename): string
+    {
+        $language = null;
+
+        if (preg_match('/\.([a-z]{2}_[A-Z]{2})\./', $filename, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/\.([a-z]{2})\./', $filename, $matches)) {
+            $language = $matches[1];
+        }
+
+        return $this->getAspellLanguageCode($language);
+    }
+
     /**
      * Get aspell language code.
      */
-    private function getAspellLanguageCode(): string
+    private function getAspellLanguageCode(?string $language = null): string
     {
-        return match ($this->lang) {
+        $language ??= $this->lang;
+
+        return match ($language) {
             'en' => 'en_US',
             'it' => 'it_IT',
             'fr' => 'fr_FR',
