@@ -10,9 +10,9 @@ use function Castor\run;
 function getAspellBinaryPath(): string
 {
     $paths = [
-        './bin/alg-aspell',
-        '../bin/alg-aspell',
-        '../../../bin/alg-aspell',
+        __DIR__ . '/bin/alg-aspell',
+        __DIR__ . '/../bin/alg-aspell',
+        __DIR__ . '/../../../bin/alg-aspell',
     ];
 
     foreach ($paths as $path) {
@@ -21,7 +21,7 @@ function getAspellBinaryPath(): string
         }
     }
 
-    return '../bin/alg-aspell';
+    return __DIR__ . '/../bin/alg-aspell';
 }
 
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Castor\Attribute\AsTask;
+use Castor\Helper\PathHelper;
 
+use function Castor\capture;
 use function Castor\load_dot_env;
 use function Castor\run;
 
@@ -33,37 +35,37 @@ function env_value(string $key, mixed $default = null, ?string $path = null): mi
         $dotenvLoaded = true;
     }
 
-    return (array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
+    return (\array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
 }
 
 function set_env(string $key, mixed $value): void
 {
-    if (array_key_exists($key, $_SERVER)) {
-        $_SERVER['orig_'.$key] = $value;
+    if (\array_key_exists($key, $_SERVER)) {
+        $_SERVER['orig_' . $key] = $value;
     }
 
-    if (array_key_exists($key, $_ENV)) {
-        $_ENV['orig_'.$key] = $value;
+    if (\array_key_exists($key, $_ENV)) {
+        $_ENV['orig_' . $key] = $value;
     }
 
     $_SERVER[$key] = $value;
     $_ENV[$key] = $value;
-    putenv(sprintf('%s=%s', $key, $value));
+    putenv(\sprintf('%s=%s', $key, $value));
 }
 
 function restore_env(string $key): void
 {
-    if (array_key_exists('orig_'.$key, $_SERVER)) {
-        $_SERVER[$key] = $_SERVER['orig_'.$key];
-        unset($_SERVER['orig_'.$key]);
+    if (\array_key_exists('orig_' . $key, $_SERVER)) {
+        $_SERVER[$key] = $_SERVER['orig_' . $key];
+        unset($_SERVER['orig_' . $key]);
     }
 
-    if (array_key_exists('orig_'.$key, $_ENV)) {
-        $_ENV[$key] = $_ENV['orig_'.$key];
-        unset($_ENV['orig_'.$key]);
+    if (\array_key_exists('orig_' . $key, $_ENV)) {
+        $_ENV[$key] = $_ENV['orig_' . $key];
+        unset($_ENV['orig_' . $key]);
     }
 
-    putenv(sprintf('%s=%s', $key, $_SERVER[$key] ?? $_ENV[$key] ?? null));
+    putenv(\sprintf('%s=%s', $key, $_SERVER[$key] ?? $_ENV[$key] ?? null));
 }
 
 /**
@@ -85,17 +87,18 @@ function dockerize(string $command, ?string $workdir = null, bool $tty = false):
     $service = env_value('DOCKER_SERVICE', 'workspace');
     $compose = env_value('DOCKER_COMPOSE_FILE', 'docker-compose.yml');
 
-    if($workdir === null && env_value('DOCKER_PROJECT_ROOT') !== null) {
+    if ($workdir === null && env_value('DOCKER_PROJECT_ROOT') !== null) {
         $workdir = env_value('DOCKER_PROJECT_ROOT');
+        $command = str_replace(PathHelper::getRoot(), $workdir, $command);
     }
 
-    $workdirArg = $workdir ? sprintf('--workdir %s', $workdir) : '';
+    $workdirArg = $workdir ? \sprintf('--workdir %s', $workdir) : '';
 
-    $isRunning = \Castor\capture(sprintf('docker compose -f %s ps -q %s', $compose, $service));
+    $isRunning = capture(\sprintf('docker compose -f %s ps -q %s', $compose, $service));
 
     $cmd = $isRunning !== '' && $isRunning !== '0' ? 'exec' : 'run --rm';
 
-    return sprintf(
+    return \sprintf(
         'docker compose -f %s %s %s %s %s %s',
         $compose,
         $cmd,
@@ -119,7 +122,7 @@ function php(): string
 
 function phpunit_bin(bool $watch = false): string
 {
-    if($watch === true) {
+    if ($watch) {
         return (string) env_value('PHPUNIT_WATCH_BIN', is_file('vendor/bin/phpunit-watch') ? 'vendor/bin/phpunit-watch' : 'bin/phpunit-watch');
     }
 
