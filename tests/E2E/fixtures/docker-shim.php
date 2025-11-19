@@ -45,14 +45,15 @@ if ($cmdIndex === null) {
 $mode = $args[$cmdIndex];
 $i = $cmdIndex + 1;
 
-// Skip optional flags for run (e.g., --rm) which may appear immediately after 'run'
+// Skip optional flags for run (e.g., --rm, --workdir) which may appear immediately after 'run'
 while ($i < \count($args) && str_starts_with($args[$i], '-')) {
-    // stop skipping flags when we hit the service name for exec (exec usually doesn't have flags here)
-    if ($mode === 'exec' && $args[$i] !== '--workdir') {
-        break;
+    if ($args[$i] === '--workdir') {
+        // --workdir takes a value, skip both
+        $i += 2;
+    } else {
+        // Other flags like --rm
+        ++$i;
     }
-    // For both run and exec, allow --workdir to appear before service or after, be permissive
-    ++$i;
 }
 
 // The service name should be next (if present). If the token looks like an option, skip it.
@@ -62,7 +63,7 @@ if ($i < \count($args) && ! str_starts_with($args[$i], '-')) {
     ++$i;
 }
 
-// Optional workdir: `--workdir <dir>`
+// Handle --workdir appearing after service name (less common but possible)
 if ($i < \count($args) && $args[$i] === '--workdir') {
     $i += 2; // skip flag and its value
 }
@@ -74,7 +75,20 @@ if ($inner !== []) {
     // Execute the inner command so that tool shims can log their invocation
     $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
     // Use array form to avoid shell parsing issues
-    $proc = proc_open($inner, $descriptors, $pipes, getcwd(), $_ENV + $_SERVER);
+    // Pass through environment: merge $_SERVER, $_ENV, and getenv() to capture all sources
+    $env = [];
+    foreach (getenv() as $k => $v) {
+        $env[$k] = $v;
+    }
+    foreach ($_ENV as $k => $v) {
+        $env[$k] = (string) $v;
+    }
+    foreach ($_SERVER as $k => $v) {
+        if (\is_string($v)) {
+            $env[$k] = $v;
+        }
+    }
+    $proc = proc_open($inner, $descriptors, $pipes, getcwd(), $env);
     if (\is_resource($proc)) {
         // consume and close pipes to avoid zombies
         foreach ($pipes as $pipe) {

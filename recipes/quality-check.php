@@ -42,6 +42,11 @@ function pre_commit(): void
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
 function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): void
 {
+    if ($files !== '') {
+        $config = (string) env_value('PHPCSFIXER_CONFIG', '.php-cs-fixer.dist.php');
+        $files = '--config=' . $config . ' -- ' . $files;
+    }
+
     run(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 

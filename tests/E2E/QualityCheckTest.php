@@ -6,7 +6,7 @@ namespace Algoritma\CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 
-use CastorRecipes\Tests\E2E\Support\Proc;
+use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
 
 final class QualityCheckTest extends TestCase
@@ -37,7 +37,7 @@ final class QualityCheckTest extends TestCase
         self::assertFileExists($shimLog, 'Shim log not created');
 
         $log = file_get_contents($shimLog) ?: '';
-        self::assertStringContainsString('php-cs-fixer fix --dry-run src/Foo.php', $log);
+        self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $log);
     }
 
     public function testPhpCsFixer(): void

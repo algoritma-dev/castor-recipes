@@ -6,7 +6,7 @@ namespace Algoritma\CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 
-use CastorRecipes\Tests\E2E\Support\Proc;
+use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
 
 final class ComposerTasksTest extends TestCase
@@ -150,8 +150,9 @@ final class ComposerTasksTest extends TestCase
 
         self::assertFileExists($dockerLog, 'Docker shim log not created');
         $dockerLogContent = file_get_contents($dockerLog) ?: '';
-        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm php', $dockerLogContent);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir /app php', $dockerLogContent);
 
+        self::assertFileExists($shimLog, 'Tool shim log not created');
         $shimLogContent = file_get_contents($shimLog) ?: '';
         self::assertStringContainsString('composer install', $shimLogContent);
     }

@@ -6,7 +6,7 @@ namespace Algoritma\CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 
-use CastorRecipes\Tests\E2E\Support\Proc;
+use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
 
 final class DockerizeTest extends TestCase
@@ -57,10 +57,11 @@ final class DockerizeTest extends TestCase
 
         $dockerLogContent = file_get_contents($dockerLog) ?: '';
         // First call is a ps check, second is the run --rm invocation
-        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm php', $dockerLogContent);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir /app php', $dockerLogContent);
 
         // The inner command arguments are recorded by the tool shim, not the docker shim
+        self::assertFileExists($shimLog, 'Tool shim log not created');
         $shimLogContent = file_get_contents($shimLog) ?: '';
-        self::assertStringContainsString('php-cs-fixer fix --dry-run src/Foo.php', $shimLogContent);
+        self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $shimLogContent);
     }
 }

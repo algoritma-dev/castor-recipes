@@ -8,19 +8,18 @@ use PhpSpellcheck\MisspellingHandler\MisspellingHandlerInterface;
 use PhpSpellcheck\MisspellingInterface;
 
 /**
- * Handler that collects misspellings into an array grouped by file
+ * Handler that collects misspellings into an array grouped by file.
  */
 final class MisspellingCollectorHandler implements MisspellingHandlerInterface
 {
     /**
-     * @var array<string, array<array{word: string, context: array<string>}>>
+     * @var array<string, list<array{word: string, context: list<string>}>>
      */
     private array $errors = [];
 
     public function __construct(
         private readonly string $projectRoot,
-    ) {
-    }
+    ) {}
 
     /**
      * @param iterable<MisspellingInterface> $misspellings
@@ -33,7 +32,7 @@ final class MisspellingCollectorHandler implements MisspellingHandlerInterface
             $filePath = $context['file'] ?? 'unknown';
             $relativePath = str_replace($this->projectRoot . '/', '', $filePath);
 
-            if (!isset($this->errors[$relativePath])) {
+            if (! isset($this->errors[$relativePath])) {
                 $this->errors[$relativePath] = [];
             }
 
@@ -45,9 +44,9 @@ final class MisspellingCollectorHandler implements MisspellingHandlerInterface
     }
 
     /**
-     * Get collected erors asdsadsa
+     * Get collected errors.
      *
-     * @return array<string, array<array{word: string, context: array<string>}>>
+     * @return array<string, list<array{word: string, context: list<string>}>>
      */
     public function getErrors(): array
     {
@@ -55,7 +54,7 @@ final class MisspellingCollectorHandler implements MisspellingHandlerInterface
     }
 
     /**
-     * Reset collected errors
+     * Reset collected errors.
      */
     public function reset(): void
     {

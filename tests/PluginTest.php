@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Algoritma\CastorRecipes\Tests;
 
-use CastorRecipes\Plugin;
+use Algoritma\CastorRecipes\Plugin;
 use Composer\Composer;
 use Composer\Config as ComposerConfig;
 use Composer\DependencyResolver\Operation\InstallOperation;

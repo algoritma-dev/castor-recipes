@@ -31,9 +31,9 @@ final class PhpSourceProcessor implements TextProcessorInterface
     }
 
     /**
-     * Extract words from PHP code using tokenizer
+     * Extract words from PHP code using tokenizer.
      *
-     * @return array<string>
+     * @return list<string>
      */
     private function extractWordsFromPhpCode(string $code): array
     {
@@ -45,7 +45,7 @@ final class PhpSourceProcessor implements TextProcessorInterface
             $token = $iValue;
 
             // Skip non-array tokens (single char operators, etc.)
-            if (!is_array($token)) {
+            if (! \is_array($token)) {
                 continue;
             }
 
@@ -53,36 +53,36 @@ final class PhpSourceProcessor implements TextProcessorInterface
 
             switch ($tokenId) {
                 // Extract variable names
-                case T_VARIABLE:
+                case \T_VARIABLE:
                     $varName = ltrim($tokenValue, '$');
-                    if (strlen($varName) > 2) {
+                    if (\strlen($varName) > 2) {
                         $this->addSplitWords($words, $varName);
                     }
                     break;
 
-                // Extract class, interface, trait, enum names
-                case T_CLASS:
-                case T_INTERFACE:
-                case T_TRAIT:
-                case T_ENUM:
+                    // Extract class, interface, trait, enum names
+                case \T_CLASS:
+                case \T_INTERFACE:
+                case \T_TRAIT:
+                case \T_ENUM:
                     $name = $this->getNextIdentifier($tokens, $i);
-                    if ($name && strlen($name) > 2) {
+                    if ($name && \strlen($name) > 2) {
                         $this->addSplitWords($words, $name);
                     }
                     break;
 
-                // Extract function/method names
-                case T_FUNCTION:
+                    // Extract function/method names
+                case \T_FUNCTION:
                     $name = $this->getNextIdentifier($tokens, $i);
                     // Skip magic methods
-                    if ($name && strlen($name) > 2 && !str_starts_with($name, '__')) {
+                    if ($name && \strlen($name) > 2 && ! str_starts_with($name, '__')) {
                         $this->addSplitWords($words, $name);
                     }
                     break;
 
-                // Extract comments
-                case T_COMMENT:
-                case T_DOC_COMMENT:
+                    // Extract comments
+                case \T_COMMENT:
+                case \T_DOC_COMMENT:
                     $commentWords = $this->extractWordsFromComment($tokenValue);
                     $words = array_merge($words, $commentWords);
                     break;
@@ -93,28 +93,30 @@ final class PhpSourceProcessor implements TextProcessorInterface
     }
 
     /**
-     * Get the next identifier token after current position
+     * Get the next identifier token after current position.
+     *
+     * @param list<mixed> $tokens
      */
     private function getNextIdentifier(array $tokens, int &$currentIndex): ?string
     {
-        $tokensCount = count($tokens);
+        $tokensCount = \count($tokens);
 
-        for ($i = $currentIndex + 1; $i < $tokensCount; $i++) {
+        for ($i = $currentIndex + 1; $i < $tokensCount; ++$i) {
             $token = $tokens[$i];
 
-            if (!is_array($token)) {
+            if (! \is_array($token)) {
                 continue;
             }
 
             [$tokenId, $tokenValue] = $token;
 
             // Found identifier
-            if ($tokenId === T_STRING) {
+            if ($tokenId === \T_STRING) {
                 return $tokenValue;
             }
 
             // Skip whitespace
-            if ($tokenId === T_WHITESPACE) {
+            if ($tokenId === \T_WHITESPACE) {
                 continue;
             }
 
@@ -126,9 +128,9 @@ final class PhpSourceProcessor implements TextProcessorInterface
     }
 
     /**
-     * Extract words from comments, removing PHPDoc tags and special characters
+     * Extract words from comments, removing PHPDoc tags and special characters.
      *
-     * @return array<string>
+     * @return list<string>
      */
     private function extractWordsFromComment(string $comment): array
     {
@@ -136,16 +138,16 @@ final class PhpSourceProcessor implements TextProcessorInterface
         $comment = preg_replace('#^/\*\*?|\*/$|^//|^\*#m', '', $comment);
 
         // Remove PHPDoc tags (@param, @return, etc.)
-        $comment = preg_replace('/@[a-zA-Z]+/', '', $comment);
+        $comment = preg_replace('/@[a-zA-Z]+/', '', (string) $comment);
 
         // Remove type hints in comments (e.g., array<string>, int|null)
-        $comment = preg_replace('/\b[a-zA-Z_]+(<[^>]+>)?(\|[a-zA-Z_]+)*\b(?=\s*\$)/', '', $comment);
+        $comment = preg_replace('/\b[a-zA-Z_]+(<[^>]+>)?(\|[a-zA-Z_]+)*\b(?=\s*\$)/', '', (string) $comment);
 
         // Remove variable names ($variable)
-        $comment = preg_replace('/\$[a-zA-Z_][a-zA-Z0-9_]*/', '', $comment);
+        $comment = preg_replace('/\$[a-zA-Z_]\w*/', '', (string) $comment);
 
         // Extract words
-        preg_match_all('/\b[a-zA-Z]+\b/', $comment, $matches);
+        preg_match_all('/\b[a-zA-Z]+\b/', (string) $comment, $matches);
 
         $words = [];
         $phpReservedWords = [
@@ -159,15 +161,17 @@ final class PhpSourceProcessor implements TextProcessorInterface
                 // Split it like we do for identifiers
                 $splitWords = $this->splitIdentifier($token);
                 foreach ($splitWords as $word) {
-                    if (!in_array($word, $phpReservedWords, true) && strlen($word) > 2) {
+                    if (! \in_array($word, $phpReservedWords, true) && \strlen($word) > 2) {
                         $words[] = $word;
                     }
                 }
             } else {
                 $word = strtolower($token);
-
                 // Skip short words, reserved words
-                if (strlen($word) <= 2 || in_array($word, $phpReservedWords, true)) {
+                if (\strlen($word) <= 2) {
+                    continue;
+                }
+                if (\in_array($word, $phpReservedWords, true)) {
                     continue;
                 }
 
@@ -179,9 +183,9 @@ final class PhpSourceProcessor implements TextProcessorInterface
     }
 
     /**
-     * Split an identifier into individual words
+     * Split an identifier into individual words.
      *
-     * @return array<string>
+     * @return list<string>
      */
     private function splitIdentifier(string $identifier): array
     {
@@ -197,9 +201,14 @@ final class PhpSourceProcessor implements TextProcessorInterface
         $words = [];
         foreach ($parts as $word) {
             $word = strtolower(trim($word));
-
             // Skip short words, numbers, and empty strings
-            if (strlen($word) <= 2 || is_numeric($word) || $word === '') {
+            if ($word === '') {
+                continue;
+            }
+            if (\strlen($word) <= 2) {
+                continue;
+            }
+            if (is_numeric($word)) {
                 continue;
             }
 
@@ -211,9 +220,9 @@ final class PhpSourceProcessor implements TextProcessorInterface
 
     /**
      * Split identifier into words (camelCase, PascalCase, snake_case)
-     * and add them to the words array
+     * and add them to the words array.
      *
-     * @param array<string> $words
+     * @param list<string> $words
      */
     private function addSplitWords(array &$words, string $identifier): void
     {

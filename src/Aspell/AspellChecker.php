@@ -8,23 +8,23 @@ use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
 use function Castor\capture;
-use function Castor\Helper\PathHelper;
 use function Castor\run;
 
-final class AspellChecker
+final readonly class AspellChecker
 {
     private const PERSONAL_DICT_PATH = '.aspell.en.pws';
 
     public function __construct(
-        private readonly string $projectRoot,
-        private readonly string $lang = 'en',
-    ) {
-    }
+        private string $projectRoot,
+        private string $lang = 'en',
+    ) {}
 
     /**
-     * Check text files (Markdown, txt, YAML, JSON translation files)
+     * Check text files (Markdown, txt, YAML, JSON translation files).
      *
-     * @return array<string, array<string>>
+     * @param list<string> $patterns
+     *
+     * @return array<string, list<string>>
      */
     public function checkTextFiles(array $patterns = ['*.md', '*.txt', 'messages.*.yaml', 'messages.*.yml', 'messages.*.json']): array
     {
@@ -34,9 +34,11 @@ final class AspellChecker
     }
 
     /**
-     * Check PHP code by extracting identifiers and splitting them into words
+     * Check PHP code by extracting identifiers and splitting them into words.
      *
-     * @return array<string, array<string>>
+     * @param list<string> $patterns
+     *
+     * @return array<string, list<string>>
      */
     public function checkPhpCode(array $patterns = ['*.php']): array
     {
@@ -46,9 +48,9 @@ final class AspellChecker
     }
 
     /**
-     * Check all files (both text and code)
+     * Check all files (both text and code).
      *
-     * @return array<string, array<string>>
+     * @return array<string, list<string>>
      */
     public function checkAll(): array
     {
@@ -59,7 +61,7 @@ final class AspellChecker
     }
 
     /**
-     * Check if aspell is installed
+     * Check if aspell is installed.
      */
     public function isAspellInstalled(): bool
     {
@@ -69,15 +71,14 @@ final class AspellChecker
     }
 
     /**
-     * Add word to personal dictionary
+     * Add word to personal dictionary.
      */
     public function addToPersonalDictionary(string $word): bool
     {
-        $dictPath = $this->getPersonalDictionaryPath();
         $words = $this->loadPersonalDictionary();
 
         $word = strtolower(trim($word));
-        if (in_array($word, $words, true)) {
+        if (\in_array($word, $words, true)) {
             return false; // Already exists
         }
 
@@ -88,9 +89,9 @@ final class AspellChecker
     }
 
     /**
-     * Get words from personal dictionary
+     * Get words from personal dictionary.
      *
-     * @return array<string>
+     * @return list<string>
      */
     public function getPersonalDictionaryWords(): array
     {
@@ -98,29 +99,29 @@ final class AspellChecker
     }
 
     /**
-     * Create personal dictionary if it doesn't exist
+     * Create personal dictionary if it doesn't exist.
      */
     public function initPersonalDictionary(): void
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
-        if (!file_exists($dictPath)) {
+        if (! file_exists($dictPath)) {
             $this->savePersonalDictionary([]);
         }
     }
 
     /**
-     * Extract words from PHP code (identifiers, camelCase, snake_case)
+     * Extract words from PHP code (identifiers, camelCase, snake_case).
      */
     private function extractPhpWords(string $content): string
     {
         // Remove comments
         $content = preg_replace('#/\*.*?\*/#s', '', $content);
-        $content = preg_replace('#//.*$#m', '', $content);
-        $content = preg_replace('#\#\[.*?\]#s', '', $content);
+        $content = preg_replace('#//.*$#m', '', (string) $content);
+        $content = preg_replace('#\#\[.*?\]#s', '', (string) $content);
 
         // Extract identifiers (including multi-word tokens)
-        preg_match_all('/[A-Za-z][A-Za-z0-9_]{2,}/', $content, $matches);
+        preg_match_all('/[A-Za-z]\w{2,}/', (string) $content, $matches);
 
         $words = [];
         foreach ($matches[0] as $token) {
@@ -128,9 +129,9 @@ final class AspellChecker
             $parts = explode('_', $token);
             foreach ($parts as $part) {
                 // Split camelCase/PascalCase
-                $subParts = preg_split('/(?=[A-Z])/', $part, -1, PREG_SPLIT_NO_EMPTY);
+                $subParts = preg_split('/(?=[A-Z])/', $part, -1, \PREG_SPLIT_NO_EMPTY);
                 foreach ($subParts as $word) {
-                    if (strlen($word) > 2) {
+                    if (\strlen($word) > 2) {
                         $words[] = strtolower($word);
                     }
                 }
@@ -141,9 +142,9 @@ final class AspellChecker
     }
 
     /**
-     * Run aspell on content
+     * Run aspell on content.
      *
-     * @return array<string>
+     * @return list<string>
      */
     private function runAspell(string $content): array
     {
@@ -155,7 +156,7 @@ final class AspellChecker
         file_put_contents($tmpFile, $content);
 
         try {
-            $cmd = sprintf(
+            $cmd = \sprintf(
                 'aspell --encoding=utf-8 --lang=%s --ignore-case %s list < %s',
                 escapeshellarg($this->lang),
                 $personalDictOption,
@@ -166,7 +167,7 @@ final class AspellChecker
 
             if ($result->isSuccessful()) {
                 $output = trim($result->getOutput());
-                if (empty($output)) {
+                if ($output === '' || $output === '0') {
                     return [];
                 }
 
@@ -180,7 +181,9 @@ final class AspellChecker
     }
 
     /**
-     * Create finder with common exclusions
+     * Create finder with common exclusions.
+     *
+     * @param list<string> $patterns
      */
     private function createFinder(array $patterns): Finder
     {
@@ -208,9 +211,9 @@ final class AspellChecker
     }
 
     /**
-     * Check files with finder
+     * Check files with finder.
      *
-     * @return array<string, array<string>>
+     * @return array<string, list<string>>
      */
     private function checkFiles(Finder $finder, bool $isPhpCode): array
     {
@@ -227,7 +230,7 @@ final class AspellChecker
 
             $misspelled = $this->runAspell($content);
 
-            if (!empty($misspelled)) {
+            if ($misspelled !== []) {
                 $relativePath = str_replace($this->projectRoot . '/', '', $file->getRealPath());
                 $errors[$relativePath] = $misspelled;
             }
@@ -242,13 +245,13 @@ final class AspellChecker
     }
 
     /**
-     * @return array<string>
+     * @return list<string>
      */
     private function loadPersonalDictionary(): array
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
-        if (!file_exists($dictPath)) {
+        if (! file_exists($dictPath)) {
             return [];
         }
 
@@ -259,7 +262,10 @@ final class AspellChecker
         foreach ($lines as $line) {
             $line = trim($line);
             // Skip header line and empty lines
-            if ($line === '' || str_starts_with($line, 'personal_ws-')) {
+            if ($line === '') {
+                continue;
+            }
+            if (str_starts_with($line, 'personal_ws-')) {
                 continue;
             }
             $words[] = $line;
@@ -269,14 +275,14 @@ final class AspellChecker
     }
 
     /**
-     * @param array<string> $words
+     * @param list<string> $words
      */
     private function savePersonalDictionary(array $words): bool
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
         // Aspell personal dictionary format
-        $content = sprintf("personal_ws-1.1 %s %d\n", $this->lang, count($words));
+        $content = \sprintf("personal_ws-1.1 %s %d\n", $this->lang, \count($words));
         $content .= implode("\n", $words) . "\n";
 
         return file_put_contents($dictPath, $content) !== false;

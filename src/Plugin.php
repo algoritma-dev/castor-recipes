@@ -50,7 +50,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         $content = file_get_contents($castorFile);
         $originalContent = $content;
 
-        // Rimuovi tutte le righe che contengono il require del plugin
+        // Remove all lines containing the plugin require
         $lines = explode("\n", $content);
         $filteredLines = array_filter($lines, fn (string $line): bool => ! str_contains($line, 'algoritma/castor-recipes/recipes/'));
 
@@ -121,7 +121,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         $castorFile = $projectRoot . '/castor.php';
         $filesystem = new Filesystem();
 
-        // Leggi le ricette già presenti nel file castor.php
+        // Read the recipes already present in the castor.php file
         $existingRecipes = [];
         if ($filesystem->exists($castorFile)) {
             $content = file_get_contents($castorFile);

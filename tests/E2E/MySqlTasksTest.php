@@ -6,7 +6,7 @@ namespace Algoritma\CastorRecipes\Tests\E2E;
 
 require_once __DIR__ . '/Support/Proc.php';
 
-use CastorRecipes\Tests\E2E\Support\Proc;
+use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
 
 final class MySqlTasksTest extends TestCase
@@ -31,7 +31,7 @@ final class MySqlTasksTest extends TestCase
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
         $log = file_get_contents($env['SHIM_DOCKER_LOG']) ?: '';
-        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm mysql', $log);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir /app mysql', $log);
         self::assertStringContainsString('mysql', $log);
         self::assertStringContainsString('CREATE DATABASE `appdb`', $log);
         self::assertStringContainsString('CHARACTER SET utf8mb4', $log);
@@ -56,7 +56,7 @@ final class MySqlTasksTest extends TestCase
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
         $log = file_get_contents($env['SHIM_DOCKER_LOG']) ?: '';
-        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm mysql', $log);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir /app mysql', $log);
         self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "DROP DATABASE IF EXISTS `appdb`"', $log);
     }
 
@@ -85,7 +85,7 @@ final class MySqlTasksTest extends TestCase
         // Drop, Create, then restore via cat | mysql
         self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "DROP DATABASE IF EXISTS `appdb`"', $log);
         self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "CREATE DATABASE `appdb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"', $log);
-        self::assertStringContainsString('-T mysql mysql -u app --host=127.0.0.1 --port=3306 appdb', $log);
+        self::assertStringContainsString('-T --workdir /app mysql mysql -u app --host=127.0.0.1 --port=3306 appdb', $log);
     }
 
     public function testDbBackupBuildsExpectedCommand(): void
@@ -106,8 +106,8 @@ final class MySqlTasksTest extends TestCase
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
         $log = file_get_contents($env['SHIM_DOCKER_LOG']) ?: '';
-        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm mysql', $log);
-        self::assertStringContainsString(' mysqldump -u app --host=127.0.0.1 --port=3306 appdb | gzip > ' . date('Ymd') . '_appdb.sql.gz', $log);
+        self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir /app mysql', $log);
+        self::assertStringContainsString(' mysqldump -u app --host=127.0.0.1 --port=3306 appdb > ' . date('Ymd') . '_appdb.sql', $log);
     }
 
     public function testDbTuneBuildsExpectedCommand(): void

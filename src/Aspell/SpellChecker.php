@@ -5,67 +5,78 @@ declare(strict_types=1);
 namespace Algoritma\CastorRecipes\Aspell;
 
 use PhpSpellcheck\MisspellingFinder;
-use PhpSpellcheck\Spellchecker\Aspell;
 use PhpSpellcheck\Text;
-use PhpSpellcheck\Utils\CommandLine;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
 /**
- * Spell checker for PHP code and text files using php-spellchecker library
+ * Spell checker for PHP code and text files using php-spellchecker library.
  */
-final class SpellChecker
+final readonly class SpellChecker
 {
     private const PERSONAL_DICT_PATH = '.aspell.en.pws';
 
-    private Aspell $spellChecker;
+    private const GLOBAL_DICT_PATH = __DIR__ . '/../../recipes/.aspell.en.pws';
+
+    private AspellWrapper $spellChecker;
+
     private PhpSourceProcessor $phpProcessor;
 
     public function __construct(
-        private readonly string $projectRoot,
-        private readonly string $lang = 'en',
+        private string $projectRoot,
+        private string $lang = 'en',
     ) {
-        // Build aspell command with personal dictionary
-        $personalDict = $this->getPersonalDictionaryPath();
-        $aspellArgs = ['aspell', '--lang=' . $this->getAspellLanguageCode(), 'list'];
+        // Create custom aspell with dictionary support
+        $this->spellChecker = new AspellWrapper();
 
-        if (file_exists($personalDict)) {
-            $aspellArgs[] = '--personal=' . $personalDict;
+        // Add global dictionary (shipped with recipes)
+        $globalDict = self::GLOBAL_DICT_PATH;
+        if (file_exists($globalDict)) {
+            $this->spellChecker->addPersonalDictionary($globalDict);
         }
 
-        $commandLine = new CommandLine(...$aspellArgs);
-        $this->spellChecker = new Aspell($commandLine);
+        // Add project-specific personal dictionary
+        $personalDict = $this->getPersonalDictionaryPath();
+        if (file_exists($personalDict)) {
+            $this->spellChecker->addPersonalDictionary($personalDict);
+        }
 
         // Initialize PHP processor
         $this->phpProcessor = new PhpSourceProcessor();
     }
 
     /**
-     * Check text files (Markdown, txt, YAML, JSON translation files)
+     * Check text files (Markdown, txt, YAML, JSON translation files).
      *
-     * @return array<string, array<array{word: string, context: array<string>}>>
+     * @param list<string> $patterns
+     *
+     * @return array<string, list<array{word: string, context: list<string>}>>
      */
     public function checkTextFiles(array $patterns = ['*.md', '*.txt', 'messages.*.yaml', 'messages.*.yml', 'messages.*.json']): array
     {
         $finder = $this->createFinder($patterns);
+
         return $this->checkFiles($finder, false);
     }
 
     /**
-     * Check PHP code using custom processor
+     * Check PHP code using custom processor.
      *
-     * @return array<string, array<array{word: string, context: array<string>}>>
+     * @param list<string> $patterns
+     *
+     * @return array<string, list<array{word: string, context: list<string>}>>
      */
     public function checkPhpCode(array $patterns = ['*.php']): array
     {
         $finder = $this->createFinder($patterns);
+
         return $this->checkFiles($finder, true);
     }
 
     /**
-     * Check all files (both text and code)
+     * Check all files (both text and code).
      *
-     * @return array<string, array<array{word: string, context: array<string>}>>
+     * @return array<string, list<array{word: string, context: list<string>}>>
      */
     public function checkAll(): array
     {
@@ -76,24 +87,24 @@ final class SpellChecker
     }
 
     /**
-     * Check if aspell is installed
+     * Check if aspell is installed.
      */
     public function isAspellInstalled(): bool
     {
         $result = shell_exec('which aspell 2>/dev/null');
-        return !empty($result);
+
+        return ! \in_array($result, ['', '0', false], true) && $result !== null;
     }
 
     /**
-     * Add word to personal dictionary
+     * Add word to personal dictionary.
      */
     public function addToPersonalDictionary(string $word): bool
     {
-        $dictPath = $this->getPersonalDictionaryPath();
         $words = $this->loadPersonalDictionary();
 
         $word = strtolower(trim($word));
-        if (in_array($word, $words, true)) {
+        if (\in_array($word, $words, true)) {
             return false; // Already exists
         }
 
@@ -104,9 +115,9 @@ final class SpellChecker
     }
 
     /**
-     * Get words from personal dictionary
+     * Get words from personal dictionary.
      *
-     * @return array<string>
+     * @return list<string>
      */
     public function getPersonalDictionaryWords(): array
     {
@@ -114,19 +125,21 @@ final class SpellChecker
     }
 
     /**
-     * Create personal dictionary if it doesn't exist
+     * Create personal dictionary if it doesn't exist.
      */
     public function initPersonalDictionary(): void
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
-        if (!file_exists($dictPath)) {
+        if (! file_exists($dictPath)) {
             $this->savePersonalDictionary([]);
         }
     }
 
     /**
-     * Create finder with common exclusions
+     * Create finder with common exclusions.
+     *
+     * @param list<string> $patterns
      */
     private function createFinder(array $patterns): Finder
     {
@@ -154,9 +167,9 @@ final class SpellChecker
     }
 
     /**
-     * Check files with finder
+     * Check files with finder.
      *
-     * @return array<string, array<array{word: string, context: array<string>}>>
+     * @return array<string, list<array{word: string, context: list<string>}>>
      */
     private function checkFiles(Finder $finder, bool $isPhpCode): array
     {
@@ -179,9 +192,8 @@ final class SpellChecker
         return $handler->getErrors();
     }
 
-
     /**
-     * Get aspell language code
+     * Get aspell language code.
      */
     private function getAspellLanguageCode(): string
     {
@@ -201,13 +213,13 @@ final class SpellChecker
     }
 
     /**
-     * @return array<string>
+     * @return list<string>
      */
     private function loadPersonalDictionary(): array
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
-        if (!file_exists($dictPath)) {
+        if (! file_exists($dictPath)) {
             return [];
         }
 
@@ -218,7 +230,10 @@ final class SpellChecker
         foreach ($lines as $line) {
             $line = trim($line);
             // Skip header line and empty lines
-            if ($line === '' || str_starts_with($line, 'personal_ws-')) {
+            if ($line === '') {
+                continue;
+            }
+            if (str_starts_with($line, 'personal_ws-')) {
                 continue;
             }
             $words[] = $line;
@@ -228,14 +243,14 @@ final class SpellChecker
     }
 
     /**
-     * @param array<string> $words
+     * @param list<string> $words
      */
     private function savePersonalDictionary(array $words): bool
     {
         $dictPath = $this->getPersonalDictionaryPath();
 
         // Aspell personal dictionary format
-        $content = sprintf("personal_ws-1.1 %s %d\n", $this->lang, count($words));
+        $content = \sprintf("personal_ws-1.1 %s %d\n", $this->lang, \count($words));
         $content .= implode("\n", $words) . "\n";
 
         return file_put_contents($dictPath, $content) !== false;
