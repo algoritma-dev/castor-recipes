@@ -10,12 +10,14 @@ use function Castor\exit_code;
 use function Castor\io;
 use function Castor\run;
 
-if (is_file(__DIR__ . '/../../../../vendor/autoload.php')) {
-    require_once __DIR__ . '/../../../../vendor/autoload.php';
-} elseif (is_file(__DIR__ . '/../../../vendor/autoload.php')) {
-    require_once __DIR__ . '/../../../vendor/autoload.php';
-} else {
-    require_once __DIR__ . '/../vendor/autoload.php';
+if (! class_exists(SpellChecker::class)) {
+    if (is_file(__DIR__ . '/../../../../vendor/autoload.php')) {
+        require_once __DIR__ . '/../../../../vendor/autoload.php';
+    } elseif (is_file(__DIR__ . '/../../../vendor/autoload.php')) {
+        require_once __DIR__ . '/../../../vendor/autoload.php';
+    } elseif (is_file(__DIR__ . '/../vendor/autoload.php')) {
+        require_once __DIR__ . '/../vendor/autoload.php';
+    }
 }
 
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
