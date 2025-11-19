@@ -33,6 +33,12 @@ castor completion --help
 - Magento 2 (`recipes/magento2.php`)
 - WordPress (`recipes/wordpress.php`)
 
+## Additional Recipes
+- **Spell Checking** (`recipes/_aspell.php`) - Comprehensive spell checking for text files and PHP code
+- **Quality Checks** (`recipes/quality-check.php`) - Code quality tools integration
+- **Docker** (`recipes/docker.php`) - Docker container management tasks
+- **MySQL/PostgreSQL** (`recipes/mysql.php`, `recipes/postgresql.php`) - Database management tasks
+
 ## Installation
 In your existing project:
 
@@ -103,6 +109,79 @@ require __DIR__ . '/vendor/algoritma/castor-recipes/recipes/laravel.php';
 ## Notes
 - Specific commands (e.g., `bin/console`, `php artisan`, `bin/magento`, `wp`) must be available in the project/in the container.
 - The recipes are basic examples: adapt the tasks to your project's needs.
+
+## Spell Checking with Aspell
+
+The `_aspell.php` recipe provides comprehensive spell checking for your project using [GNU Aspell](http://aspell.net/).
+
+### Requirements
+- GNU Aspell must be installed on your system:
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get install aspell aspell-en aspell-it
+
+  # macOS
+  brew install aspell
+  ```
+
+### Features
+- **Text file checking**: Markdown, text files, YAML/JSON translation files
+- **PHP code checking**: Extracts and verifies identifiers (variables, classes, methods, comments) using PHP tokenizer
+- **Multi-language support**: English, Italian, French, German, Spanish
+- **Automatic language detection**: From filename patterns (e.g., `messages.it_IT.yaml`)
+- **Personal dictionary**: Project-specific word lists (`.aspell.en.pws`)
+- **Global dictionary**: Shared technical terms across all projects
+- **Smart PHP processing**: Ignores built-in functions, splits camelCase/snake_case identifiers
+
+### Available Tasks
+
+```bash
+# Check text files (markdown, yaml, json translations)
+castor aspell:check
+
+# Check PHP code identifiers
+castor aspell:check-code
+
+# Check all files (text + code)
+castor aspell:check-all
+
+# Check specific files
+castor aspell:check-all --files="README.md src/Plugin.php"
+
+# Check with different language
+castor aspell:check --lang=it
+
+# Add all errors to personal dictionary automatically
+castor aspell:check-all --ignore-all
+
+# Manage personal dictionary
+castor aspell:init                    # Initialize personal dictionary
+castor aspell:add-word myword         # Add a word to dictionary
+castor aspell:show-dict               # Show all words in dictionary
+```
+
+### Personal Dictionary
+
+The spell checker uses a project-specific personal dictionary stored in `.aspell.en.pws` at your project root. This file:
+- Should be committed to version control
+- Contains project-specific terminology, brand names, technical terms
+- Is automatically loaded during spell checks
+- Can be managed via `aspell:add-word` and `aspell:show-dict` tasks
+
+### Integration with Git Hooks
+
+Add spell checking to your pre-commit hook:
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Get list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+# Run spell check on staged files
+castor aspell:check-all --files="$STAGED_FILES" || exit 1
+```
 
 ## Development
 
