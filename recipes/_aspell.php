@@ -13,7 +13,7 @@ use function Castor\run;
 require __DIR__ . '/../vendor/autoload.php';
 
 #[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
-function aspell_check_text(string $lang = 'en'): void
+function aspell_check_text(string $lang = 'en', bool $ignoreAll = false): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
@@ -27,11 +27,11 @@ function aspell_check_text(string $lang = 'en'): void
 
     $errors = $checker->checkTextFiles();
 
-    displayResults($errors);
+    displayResults($errors, $checker, $ignoreAll);
 }
 
 #[AsTask(name: 'check-code', namespace: 'aspell', description: 'Find spelling mistakes in PHP code identifiers')]
-function aspell_check_code(string $lang = 'en'): void
+function aspell_check_code(string $lang = 'en', bool $ignoreAll = false): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
@@ -45,11 +45,11 @@ function aspell_check_code(string $lang = 'en'): void
 
     $errors = $checker->checkPhpCode();
 
-    displayResults($errors);
+    displayResults($errors, $checker, $ignoreAll);
 }
 
 #[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)')]
-function aspell_check_all(string $lang = 'en', string $files = ''): void
+function aspell_check_all(string $lang = 'en', string $files = '', bool $ignoreAll = false): void
 {
     $checker = new SpellChecker(PathHelper::getRoot(), $lang);
 
@@ -69,7 +69,7 @@ function aspell_check_all(string $lang = 'en', string $files = ''): void
 
     $errors = $checker->checkAll($specificFiles);
 
-    displayResults($errors);
+    displayResults($errors, $checker, $ignoreAll);
 }
 
 #[AsTask(name: 'add-word', namespace: 'aspell', description: 'Add a word to the personal dictionary')]
@@ -125,10 +125,33 @@ function aspell_init(string $lang = 'en'): void
  *
  * @param array<string, list<array{word: string, context: list<string>}>> $errors
  */
-function displayResults(array $errors): void
+function displayResults(array $errors, SpellChecker $checker, bool $ignoreAll = false): void
 {
     if ($errors === []) {
         io()->success('No spelling errors found!');
+
+        return;
+    }
+
+    if ($ignoreAll) {
+        $checker->initPersonalDictionary();
+        $addedWords = [];
+
+        foreach ($errors as $errorsList) {
+            foreach ($errorsList as $error) {
+                $word = $error['word'];
+                if ($checker->addToPersonalDictionary($word)) {
+                    $addedWords[] = $word;
+                }
+            }
+        }
+
+        if ($addedWords !== []) {
+            io()->success(\sprintf('Added %d word(s) to personal dictionary', \count($addedWords)));
+            io()->listing($addedWords);
+        } else {
+            io()->note('All words already exist in personal dictionary');
+        }
 
         return;
     }
@@ -153,6 +176,7 @@ function displayResults(array $errors): void
     io()->error(\sprintf('Found %d potential spelling error(s) in %d file(s)', $totalErrors, \count($errors)));
     io()->note([
         'To add a word to your personal dictionary: castor aspell:add-word <word>',
+        'To add all words automatically: add --ignore-all option',
         'To fix errors interactively: aspell check <filename>',
     ]);
 
