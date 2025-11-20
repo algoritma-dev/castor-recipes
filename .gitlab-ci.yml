@@ -48,7 +48,7 @@ default:
         COMPOSE_INTERACTIVE_NO_CLI: 1
     before_script:
         # Install docker-compose (the docker image doesn't always have the latest compose plugin)
-        - apk add --no-cache docker-compose
+        - apt-get install docker-compose
     script:
         # 1. Build the stack (uses your docker/php/Dockerfile if defined in compose)
         - docker-compose build
