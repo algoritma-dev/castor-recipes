@@ -122,11 +122,10 @@ function test_watch(): void
             $args = [$args];
         }
 
-        io()->section('Watching... (Press Ctrl+C to change settings, or press ENTER to rerun tests)');
-
         $runTests = function () use ($args): void {
             system('clear');
             tests($args);
+            io()->info('Watching... (Press Ctrl+C to change settings, or press SPACE to rerun tests)');
         };
 
         // Run immediately once
