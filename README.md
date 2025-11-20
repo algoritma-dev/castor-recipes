@@ -185,7 +185,67 @@ castor aspell:check-all --files="$STAGED_FILES" || exit 1
 
 ## Quality Checks Recipe
 
-The `quality-check.php` recipe provides tasks for running code quality tools and tests.
+The `quality-check.php` recipe provides comprehensive code quality tools and testing capabilities.
+
+### Available Tasks
+
+```bash
+# Code formatting and analysis
+castor qa:php-cs-fixer              # Run PHP CS Fixer
+castor qa:rector                    # Run Rector for code refactoring
+castor qa:phpstan                   # Run PHPStan static analysis
+
+# Testing
+castor qa:tests                     # Run PHPUnit tests
+castor qa:test_watch                # 🔥 Run tests in interactive watch mode
+
+# Spell checking
+castor qa:aspell-check              # Check text files for typos
+castor qa:aspell-check-code         # Check PHP code for typos
+castor qa:aspell-check-all          # Check all files for typos
+
+# Pre-commit checks
+castor qa:pre-commit                # Run all quality checks (Rector, CS Fixer, PHPStan, Aspell, tests)
+```
+
+### ⭐ Interactive Test Watch Mode
+
+The **`qa:test_watch`** task provides an interactive watch mode that automatically reruns your tests when files change:
+
+```bash
+castor qa:test_watch
+```
+
+**Features:**
+- **Interactive menu** with options:
+  - Run all tests
+  - Filter by test name
+  - Filter by file name
+  - Pass custom arguments to PHPUnit
+- **Auto-rerun** tests when source or test files change
+- **Ctrl+C** returns to the menu (doesn't exit)
+- Watches all PSR-4 autoload paths
+- Smart debouncing to avoid multiple runs
+
+**Requirements:**
+- PHP `pcntl` extension for signal handling
+
+### Typo Checking with Aspell
+
+The quality-check recipe integrates spell checking for catching typos in your code:
+
+```bash
+# Check specific files
+castor qa:aspell-check-all --files="README.md src/MyClass.php"
+
+# Automatically add all errors to dictionary
+castor qa:aspell-check-all --ignore-all
+
+# Check with specific language
+castor qa:aspell-check --lang=it
+```
+
+See the [Spell Checking with Aspell](#spell-checking-with-aspell) section for complete documentation.
 
 ## Development
 
