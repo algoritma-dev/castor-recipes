@@ -7,7 +7,6 @@ workflow:
         -   if: $CI_COMMIT_BRANCH == "main"
 
 stages:
-    - build
     - test
     - quality
 
@@ -31,29 +30,15 @@ default:
         - ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
 
-build:image:
-    stage: build
-    image: docker:24.0.5-cli
-    services:
-        -   name: docker:24.0.5-dind
-            alias: docker
-            command: [ "--tls=false" ]
-    variables:
-        DOCKER_TLS_CERTDIR: ""
-    before_script:
-        - unset DOCKER_HOST
-        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
-    script:
-        - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG -f docker/php/Dockerfile .
-        - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-
 # Template for tests jobs
 .tests_template:
     stage: test
     before_script:
-        # We assume apt-get dependencies and php extensions are now in the Dockerfile.
-        # Ensure Composer is available (if not in Dockerfile, install it here)
-        - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
+        - apt-get update && apt-get install -y --no-install-recommends openssh-client git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev aspell aspell-en && rm -rf /var/lib/apt/lists/*
+        - docker-php-ext-configure intl
+        - docker-php-ext-install -j"$(nproc)" intl pdo pdo_mysql pdo_sqlite xml mbstring
+        # Install Composer (v2 by default)
+        - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
         # Configure Composer cache
         - composer config cache-dir .composer/cache
     script:
@@ -63,7 +48,7 @@ build:image:
 
 # Matrix of PHP versions for tests
 php:tests:
-    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    image: "php:${PHP_VERSION}-cli"
     extends: .tests_template
     parallel:
         matrix:
@@ -72,7 +57,7 @@ php:tests:
 # Static Analysis job with PHP 8.2
 quality:
     stage: quality
-    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    image: "jakzal/phpqa:php8.2"
     before_script:
         - !reference [ .scripts, ssh ]
         - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
