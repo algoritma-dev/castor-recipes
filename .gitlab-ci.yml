@@ -7,6 +7,7 @@ workflow:
         -   if: $CI_COMMIT_BRANCH == "main"
 
 stages:
+    - build
     - test
     - quality
 
@@ -30,15 +31,26 @@ default:
         - ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
 
+build:image:
+    stage: build
+    image: docker:20.10.24
+    services:
+        - docker:20.10.24-dind
+    variables:
+        DOCKER_TLS_CERTDIR: "/certs"
+    before_script:
+        - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    script:
+        - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG -f docker/php/Dockerfile .
+        - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
 # Template for tests jobs
 .tests_template:
     stage: test
     before_script:
-        - apt-get update && apt-get install -y --no-install-recommends openssh-client git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev aspell aspell-en && rm -rf /var/lib/apt/lists/*
-        - docker-php-ext-configure intl
-        - docker-php-ext-install -j"$(nproc)" intl pdo pdo_mysql pdo_sqlite xml mbstring
-        # Install Composer (v2 by default)
-        - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+        # We assume apt-get dependencies and php extensions are now in the Dockerfile.
+        # Ensure Composer is available (if not in Dockerfile, install it here)
+        - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
         # Configure Composer cache
         - composer config cache-dir .composer/cache
     script:
@@ -48,7 +60,7 @@ default:
 
 # Matrix of PHP versions for tests
 php:tests:
-    image: "php:${PHP_VERSION}-cli"
+    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
     extends: .tests_template
     parallel:
         matrix:
@@ -57,7 +69,7 @@ php:tests:
 # Static Analysis job with PHP 8.2
 quality:
     stage: quality
-    image: "jakzal/phpqa:php8.2"
+    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
     before_script:
         - !reference [ .scripts, ssh ]
         - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
