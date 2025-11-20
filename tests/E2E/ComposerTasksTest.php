@@ -111,6 +111,10 @@ final class ComposerTasksTest extends TestCase
 
     public function testComposerInstallIsDockerizedWhenEnabled(): void
     {
+        if (getenv('GITLAB_CI')) {
+            $this->markTestSkipped('Skipping E2E Docker test in CI environment due to filesystem isolation.');
+        }
+
         $toolShim = __DIR__ . '/fixtures/tool-shim.php';
         $dockerShimSrc = __DIR__ . '/fixtures/docker-shim.php';
 

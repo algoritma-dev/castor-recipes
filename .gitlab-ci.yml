@@ -33,6 +33,8 @@ default:
 # Template for tests jobs
 .tests_template:
     stage: test
+    variables:
+        - GITLAB_CI: 1
     before_script:
         - apt-get update && apt-get install -y --no-install-recommends openssh-client git unzip libicu-dev libxml2-dev libzip-dev libonig-dev zlib1g-dev libsqlite3-dev aspell aspell-en && rm -rf /var/lib/apt/lists/*
         - docker-php-ext-configure intl
