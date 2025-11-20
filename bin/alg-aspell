@@ -3,9 +3,6 @@
 
 declare(strict_types=1);
 
-// Disabilita il controllo della piattaforma PHP di Composer
-\define('COMPOSER_IGNORE_PLATFORM_REQS', '8.4.0');
-
 if (is_file(__DIR__ . '/../../../../vendor/autoload.php')) {
     require_once __DIR__ . '/../../../../vendor/autoload.php';
 } elseif (is_file(__DIR__ . '/../../../vendor/autoload.php')) {
@@ -15,6 +12,11 @@ if (is_file(__DIR__ . '/../../../../vendor/autoload.php')) {
 }
 
 use Algoritma\CastorRecipes\Aspell\SpellChecker;
+use Symfony\Component\Console\Output\ConsoleOutput;
+
+$output = new ConsoleOutput();
+$input = new Symfony\Component\Console\Input\ArgvInput();
+$style = new \Symfony\Component\Console\Style\SymfonyStyle($input, $output);
 
 function showHelp(): void
 {
@@ -71,8 +73,10 @@ function parseArgs(array $argv): array
 
 function displayResults(array $errors, SpellChecker $checker, bool $ignoreAll): int
 {
+    global $style;
+
     if ($errors === []) {
-        echo "✓ No spelling errors found!\n";
+        $style->success("No spelling errors found!");
 
         return 0;
     }
@@ -91,12 +95,12 @@ function displayResults(array $errors, SpellChecker $checker, bool $ignoreAll): 
         }
 
         if ($addedWords !== []) {
-            echo \sprintf("✓ Added %d word(s) to personal dictionary\n", \count($addedWords));
+            $style->success(\sprintf("Added %d word(s) to personal dictionary", \count($addedWords)));
             foreach ($addedWords as $word) {
-                echo "  - {$word}\n";
+                $style->writeln("  - {$word}");
             }
         } else {
-            echo "ℹ All words already exist in personal dictionary\n";
+            $style->info("ℹ All words already exist in personal dictionary\n");
         }
 
         return 0;
@@ -104,19 +108,19 @@ function displayResults(array $errors, SpellChecker $checker, bool $ignoreAll): 
 
     $totalErrors = 0;
     foreach ($errors as $file => $errorsList) {
-        echo "\n=== {$file} ===\n";
+        $style->section("{$file}");
         foreach ($errorsList as $error) {
             $word = $error['word'];
             $contexts = $error['context'];
             $contextStr = empty($contexts) ? '' : ' (' . implode(', ', $contexts) . ')';
-            echo "  - {$word}{$contextStr}\n";
+            $style->writeln("  - {$word}{$contextStr}");
         }
         $totalErrors += \count($errorsList);
     }
 
-    echo "\n✗ Found {$totalErrors} potential spelling error(s) in " . \count($errors) . " file(s)\n";
-    echo "\nℹ To add a word to your personal dictionary: aspell.php add-word <word>\n";
-    echo "ℹ To add all words automatically: add --ignore-all option\n";
+    $style->error("Found {$totalErrors} potential spelling error(s) in " . \count($errors) . " file(s)");
+    $style->info("To add a word to your personal dictionary: aspell.php add-word <word>");
+    $style->info("To add all words automatically: add --ignore-all option");
 
     return 1;
 }
@@ -134,63 +138,63 @@ if ($command === 'help') {
 $checker = new SpellChecker($rootDir, $lang);
 
 if (! $checker->isAspellInstalled()) {
-    fwrite(\STDERR, "✗ Error: aspell is not installed. Install it with: sudo apt-get install aspell\n");
+    $style->error("aspell is not installed. Please install it first.");
     exit(1);
 }
 
 switch ($command) {
     case 'check-all':
         if ($options['files'] !== []) {
-            echo \sprintf("Checking %d file(s) for spelling errors...\n", \count($options['files']));
+            $style->writeln(\sprintf("Checking %d file(s) for spelling errors...", \count($options['files'])));
         } else {
-            echo "Checking all files for spelling errors...\n";
+            $style->writeln("Checking all files for spelling errors...");
         }
         $errors = $checker->checkAll($options['files']);
         exit(displayResults($errors, $checker, $options['ignore_all']));
 
     case 'check-text':
-        echo "Checking text files for spelling errors...\n";
+        $style->writeln("Checking text files for spelling errors...");
         $errors = $checker->checkTextFiles();
         exit(displayResults($errors, $checker, $options['ignore_all']));
 
     case 'check-code':
-        echo "Checking PHP code for spelling errors...\n";
+        $style->writeln("Checking PHP code for spelling errors...");
         $errors = $checker->checkPhpCode();
         exit(displayResults($errors, $checker, $options['ignore_all']));
 
     case 'add-word':
         if ($options['word'] === null) {
-            fwrite(\STDERR, "✗ Error: word argument required\nUsage: aspell.php add-word <word>\n");
+            $style->error("word argument required. Usage: aspell.php add-word <word>");
             exit(1);
         }
         $checker->initPersonalDictionary();
         if ($checker->addToPersonalDictionary($options['word'])) {
-            echo "✓ Added '{$options['word']}' to personal dictionary (.aspell.{$lang}.pws)\n";
+            $style->success("✓ Added '{$options['word']}' to personal dictionary (.aspell.{$lang}.pws)");
         } else {
-            echo "ℹ Word '{$options['word']}' already exists in personal dictionary\n";
+            $style->info("Word '{$options['word']}' already exists in personal dictionary");
         }
         exit(0);
 
     case 'show-dict':
         $words = $checker->getPersonalDictionaryWords();
         if ($words === []) {
-            echo "ℹ Personal dictionary is empty. Use 'aspell.php add-word <word>' to add words.\n";
+            $style->info("Personal dictionary is empty. Use 'aspell.php add-word <word>' to add words.");
             exit(0);
         }
-        echo \sprintf("Personal Dictionary (%d words):\n", \count($words));
+        $style->writeln(\sprintf("Personal Dictionary (%d words):", \count($words)));
         foreach ($words as $word) {
-            echo "  - {$word}\n";
+            $style->writeln("  - {$word}");
         }
         exit(0);
 
     case 'init':
         $checker->initPersonalDictionary();
-        echo "✓ Personal dictionary initialized at .aspell.{$lang}.pws\n";
-        echo "ℹ Add project-specific words with: aspell.php add-word <word>\n";
+        $style->writeln("Personal dictionary initialized at .aspell.{$lang}.pws");
+        $style->info("Add project-specific words with: aspell.php add-word <word>");
         exit(0);
 
     default:
-        fwrite(\STDERR, "✗ Error: Unknown command '{$command}'\n\n");
+        $style->error("Unknown command '{$command}'");
         showHelp();
         exit(1);
 }
