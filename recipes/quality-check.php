@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use Castor\Attribute\AsArgument;
-use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Filesystem\Path;
 
 use function Castor\capture;
 use function Castor\run;
+use function Castor\exit_code;
 
 require_once __DIR__ . '/_common.php';
 
@@ -49,19 +49,19 @@ function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): v
         $files = '--config=' . $config . ' -- ' . $files;
     }
 
-    run(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
+    exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function rector(bool $dryRun = false, string $args = ''): void
 {
-    run(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
+    exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
 function phpstan(string $args = ''): void
 {
-    run(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
+    exit_code(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
 }
 
 #[AsTask(description: 'Debug phpunit test', namespace: 'qa')]
@@ -73,19 +73,13 @@ function test_debug(
     bool $debug = true
 ): void {
     $params = build_phpunit_params($config, $filter, $testsuite, $stopOnFailure, $debug);
-    run(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
-}
-
-#[AsTask(name: 'js-test', description: 'Exec JS tests in watch mode', namespace: 'qa')]
-function test_watch(#[AsRawTokens] array $rawTokens = []): void
-{
-    run(dockerize(sprintf('%s watch %s', phpunit_bin(true), implode(' ', $rawTokens))));
+    exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
 }
 
 #[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]
 function tests(string $args = ''): void
 {
-    run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+    exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
 }
 
 function build_phpunit_params(

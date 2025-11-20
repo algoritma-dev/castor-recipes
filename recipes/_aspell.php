@@ -57,7 +57,7 @@ function aspell_add_word(string $word, string $lang = 'en'): void
 {
     $binary = getAspellBinaryPath();
 
-    run(dockerize("php {$binary} add-word {$word} --lang={$lang}"));
+    exit_code(dockerize("php {$binary} add-word {$word} --lang={$lang}"));
 }
 
 #[AsTask(name: 'show-dict', namespace: 'aspell', description: 'Show words in personal dictionary')]
@@ -65,7 +65,7 @@ function aspell_show_dictionary(string $lang = 'en'): void
 {
     $binary = getAspellBinaryPath();
 
-    run(dockerize("php {$binary} show-dict --lang={$lang}"));
+    exit_code(dockerize("php {$binary} show-dict --lang={$lang}"));
 }
 
 #[AsTask(name: 'init', namespace: 'aspell', description: 'Initialize personal dictionary')]
@@ -73,5 +73,5 @@ function aspell_init(string $lang = 'en'): void
 {
     $binary = getAspellBinaryPath();
 
-    run(dockerize("php {$binary} init --lang={$lang}"));
+    exit_code(dockerize("php {$binary} init --lang={$lang}"));
 }
