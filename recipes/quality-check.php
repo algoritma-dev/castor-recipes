@@ -7,7 +7,6 @@ use Castor\Attribute\AsTask;
 use Symfony\Component\Filesystem\Path;
 
 use function Castor\capture;
-use function Castor\run;
 use function Castor\exit_code;
 
 require_once __DIR__ . '/_common.php';
@@ -28,40 +27,56 @@ function phpstan_bin(): string
 }
 
 #[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
-function pre_commit(): void
+function pre_commit(): int
 {
     $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
     $modifiedFiles = array_filter(explode("\n", trim($captured)));
     $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
 
-    rector(false, $filesArg);
-    php_cs_fixer(false, $filesArg);
-    phpstan('analyse --memory-limit=-1');
-    aspell_check_all(files: $filesArg);
-    tests();
+    if (rector(false, $filesArg) !== 0) {
+        return 1;
+    }
+
+    if (php_cs_fixer(false, $filesArg) !== 0) {
+        return 1;
+    }
+
+    if (phpstan('analyse --memory-limit=-1') !== 0) {
+        return 1;
+    }
+
+    if (aspell_check_all(files: $filesArg) !== 0) {
+        return 1;
+    }
+
+    if (tests() !== 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 #[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
-function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): void
+function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): int
 {
     if ($files !== '') {
         $config = (string) env_value('PHPCSFIXER_CONFIG', '.php-cs-fixer.dist.php');
         $files = '--config=' . $config . ' -- ' . $files;
     }
 
-    exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
+    return exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
-function rector(bool $dryRun = false, string $args = ''): void
+function rector(bool $dryRun = false, string $args = ''): int
 {
-    exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
+    return exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
 #[AsTask(description: 'PHP Rector', namespace: 'qa')]
-function phpstan(string $args = ''): void
+function phpstan(string $args = ''): int
 {
-    exit_code(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
+    return exit_code(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
 }
 
 #[AsTask(description: 'Debug phpunit test', namespace: 'qa')]
@@ -71,15 +86,16 @@ function test_debug(
     ?string $testsuite = null,
     bool $stopOnFailure = false,
     bool $debug = true
-): void {
+): int {
     $params = build_phpunit_params($config, $filter, $testsuite, $stopOnFailure, $debug);
-    exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
+
+    return exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
 }
 
 #[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]
-function tests(string $args = ''): void
+function tests(string $args = ''): int
 {
-    exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+    return exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
 }
 
 function build_phpunit_params(
