@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use Castor\Attribute\AsArgument;
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 use Symfony\Component\Filesystem\Path;
 
 use function Castor\capture;
 use function Castor\exit_code;
+use function Castor\io;
+use function Castor\watch;
 
 require_once __DIR__ . '/_common.php';
 
@@ -79,54 +82,117 @@ function phpstan(string $args = ''): int
     return exit_code(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
 }
 
-#[AsTask(description: 'Debug phpunit test', namespace: 'qa')]
-function test_debug(
-    ?string $config = null,
-    ?string $filter = null,
-    ?string $testsuite = null,
-    bool $stopOnFailure = false,
-    bool $debug = true
-): int {
-    $params = build_phpunit_params($config, $filter, $testsuite, $stopOnFailure, $debug);
-
-    return exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $params)));
-}
-
-#[AsTask(description: 'Run all tests (PHPUnit)', namespace: 'qa')]
-function tests(string $args = ''): int
+#[AsTask(description: 'Run PHPUnit tests in watch mode', namespace: 'qa')]
+function test_watch(): void
 {
-    return exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+    // Enable async signals to catch Ctrl+C immediately
+    if (\function_exists('pcntl_async_signals')) {
+        pcntl_async_signals(true);
+    }
+
+    $autoloadPaths = get_psr4_paths();
+    $autoloadPaths = array_map(fn (string $path): string => $path . '...', $autoloadPaths);
+
+    while (true) {
+        io()->writeln('');
+
+        $answer = io()->choice('What do you want to do?', [
+            'a' => 'Run all tests',
+            't' => 'Filter by test name',
+            'p' => 'Filter by file name',
+            'x' => 'Pass anyone arguments you want to PHPUnit',
+            'q' => 'Quit',
+        ], 'a');
+
+        if ($answer === 'q') {
+            return;
+        }
+
+        $args = [];
+        if ($answer === 't') {
+            $testName = io()->ask('Enter the test name');
+            $args = ['--filter ' . $testName];
+        }
+        if ($answer === 'p') {
+            $filename = io()->ask('Enter the file name');
+            $args = [$filename];
+        }
+        if ($answer === 'x') {
+            $args = io()->ask('Enter the plain arguments');
+            $args = [$args];
+        }
+
+        io()->section('Watching... (Press Ctrl+C to change settings)');
+
+        $runTests = function () use ($args): void {
+            system('clear');
+            tests($args);
+        };
+
+        // Run immediately once
+        $runTests();
+
+        // Fork a child process for watching
+        $pid = pcntl_fork();
+
+        if ($pid === -1) {
+            io()->error('Could not fork process');
+
+            return;
+        }
+
+        if ($pid !== 0) {
+            // Parent process: ignore SIGINT and wait for child
+            pcntl_signal(SIGINT, SIG_IGN);
+
+            pcntl_waitpid($pid, $status);
+
+            // Restore default signal handler
+            pcntl_signal(SIGINT, SIG_DFL);
+
+            // Child was interrupted, reload menu
+            system('clear');
+            io()->writeln('');
+            io()->writeln('Reloading configuration...');
+            continue;
+        }
+
+        // Child process: do the watching
+        try {
+            // Reset signal handler for child
+            pcntl_signal(SIGINT, function (): void {
+                exit(0); // Exit child cleanly on Ctrl+C
+            });
+
+            $lastRun = 0;
+
+            watch($autoloadPaths, function (string $file) use ($runTests, &$lastRun): void {
+                if (str_ends_with($file, '~')) {
+                    return;
+                }
+
+                $now = microtime(true);
+
+                if (($now - $lastRun) < 1.5) {
+                    return;
+                }
+
+                $lastRun = $now;
+                $runTests();
+            });
+        } catch (Throwable) {
+            // Child exits silently on any error
+            exit(0);
+        }
+
+        exit(0);
+    }
 }
 
-function build_phpunit_params(
-    ?string $config = null,
-    ?string $filter = null,
-    ?string $testsuite = null,
-    bool $stopOnFailure = false,
-    bool $debug = true
-): string {
-    $params = [];
-
-    if ($config !== null) {
-        $params[] = '--configuration=' . $config;
-    }
-
-    if ($filter !== null) {
-        $params[] = '--filter=' . $filter;
-    }
-
-    if ($testsuite !== null) {
-        $params[] = '--testsuite=' . $testsuite;
-    }
-
-    if ($stopOnFailure) {
-        $params[] = '--stop-on-failure';
-        $params[] = '--stop-on-error';
-    }
-
-    if ($debug) {
-        $params[] = '--debug';
-    }
-
-    return implode(' ', $params);
+#[AsTask(namespace: 'qa', description: 'Run all tests (PHPUnit)')]
+function tests(
+    #[AsRawTokens]
+    array $args = []
+): int {
+    return exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), implode(' ', $args))));
 }

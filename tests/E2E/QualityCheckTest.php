@@ -132,7 +132,7 @@ final class QualityCheckTest extends TestCase
             \PHP_BINARY,
             'vendor/bin/castor',
             'qa:tests',
-            '--args=--filter=ExampleTest',
+            '--filter=ExampleTest',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);

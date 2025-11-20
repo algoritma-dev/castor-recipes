@@ -15,7 +15,8 @@
         "php": "^8.2",
         "composer-plugin-api": "^2.0",
         "symfony/filesystem": "^6.0|^7.0",
-        "tigitz/php-spellchecker": "*"
+        "tigitz/php-spellchecker": "*",
+        "ext-pcntl": "*"
     },
     "require-dev": {
         "algoritma/php-coding-standard": "^3.0",

@@ -128,3 +128,31 @@ function phpunit_bin(bool $watch = false): string
 
     return (string) env_value('PHPUNIT_BIN', is_file('vendor/bin/phpunit') ? 'vendor/bin/phpunit' : 'bin/phpunit');
 }
+
+function get_psr4_paths(bool $includeDev = true): array
+{
+    $composerPath = PathHelper::getRoot() . '/composer.json';
+
+    if (! file_exists($composerPath)) {
+        throw new RuntimeException('composer.json not found.');
+    }
+
+    $composer = json_decode(file_get_contents($composerPath), true, 512, \JSON_THROW_ON_ERROR);
+
+    $paths = [];
+
+    // Extract "autoload"
+    foreach ($composer['autoload']['psr-4'] ?? [] as $path) {
+        // Cast to array because psr-4 mapping can be an array of paths
+        $paths = array_merge($paths, (array) $path);
+    }
+
+    if ($includeDev) {
+        // Extract "autoload-dev"
+        foreach ($composer['autoload-dev']['psr-4'] ?? [] as $path) {
+            $paths = array_merge($paths, (array) $path);
+        }
+    }
+
+    return array_unique($paths);
+}

@@ -1,13 +1,15 @@
-personal_ws-1.1 en 44
+personal_ws-1.1 en 50
 acm
 aggiorna
 algoritma
+async
 autocompletion
 camelcase
 ccl
 compatibilità
 configurazione
 crea
+ctrl
 dbbackup
 definizioni
 di
@@ -29,16 +31,21 @@ macos
 myword
 opzionale
 pathname
+pcntl
 pcov
+pid
+psr
 pulisci
 readme
 ricarica
 ricerca
 ricostruisce
+sigint
 sudo
 supervisord
 symlink
 traduzioni
 url
 voce
+waitpid
 wp
