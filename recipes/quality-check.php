@@ -149,6 +149,10 @@ function test_watch(): void
             // Restore default signal handler
             pcntl_signal(SIGINT, SIG_DFL);
 
+            // Restore terminal settings in case child process left it in non-canonical mode
+            system('stty icanon echo');
+            stream_set_blocking(\STDIN, true);
+
             // Child was interrupted, reload menu
             system('clear');
             io()->writeln('');
