@@ -33,9 +33,9 @@ default:
 
 build:image:
     stage: build
-    image: docker:20.10.24
+    image: docker:24.0.5-cli
     services:
-        -   name: docker:20.10.24-dind
+        -   name: docker:24.0.5-dind
             alias: docker
             command: [ "--tls=false" ]
     variables:
