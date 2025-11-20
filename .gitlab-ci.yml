@@ -31,22 +31,22 @@ default:
         - ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
 
-    build:image:
-        stage: build
-        image:
-            name: gcr.io/kaniko-project/executor:v1.23.2-debug
-            entrypoint: [""]
-        script:
-            # 1. Authenticate with your self-hosted GitLab Registry
-            - mkdir -p /kaniko/.docker
-            - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-            # 2. Build and push the image
-            - /kaniko/executor
-                --context "${CI_PROJECT_DIR}"
-                --dockerfile "${CI_PROJECT_DIR}/docker/php/Dockerfile"
-                --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
-              # If your self-hosted GitLab uses a self-signed or internal certificate, uncomment the line below:
-            # --insecure
+build:image:
+    stage: build
+    image:
+        name: gcr.io/kaniko-project/executor:v1.23.2-debug
+        entrypoint: [""]
+    script:
+        # 1. Authenticate with your self-hosted GitLab Registry
+        - mkdir -p /kaniko/.docker
+        - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+        # 2. Build and push the image
+        - /kaniko/executor
+            --context "${CI_PROJECT_DIR}"
+            --dockerfile "${CI_PROJECT_DIR}/docker/php/Dockerfile"
+            --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+          # If your self-hosted GitLab uses a self-signed or internal certificate, uncomment the line below:
+        # --insecure
 
 # Template for tests jobs
 .tests_template:
