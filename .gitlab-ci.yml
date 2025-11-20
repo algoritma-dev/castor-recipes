@@ -7,7 +7,6 @@ workflow:
         -   if: $CI_COMMIT_BRANCH == "main"
 
 stages:
-    - build
     - test
     - quality
 
@@ -31,40 +30,42 @@ default:
         - ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
         - chmod 644 ~/.ssh/known_hosts
 
-build:image:
-    stage: build
-    image:
-        name: gcr.io/kaniko-project/executor:v1.23.2-debug
-        entrypoint: [""]
-    script:
-        # 1. Authenticate with your self-hosted GitLab Registry
-        - mkdir -p /kaniko/.docker
-        - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-        # 2. Build and push the image
-        - /kaniko/executor
-            --context "${CI_PROJECT_DIR}"
-            --dockerfile "${CI_PROJECT_DIR}/docker/php/Dockerfile"
-            --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
-          # If your self-hosted GitLab uses a self-signed or internal certificate, uncomment the line below:
-        # --insecure
-
 # Template for tests jobs
+# Job using Docker Compose
 .tests_template:
     stage: test
+    image: docker:20.10.24
+    services:
+        # We must explicitly disable TLS to fix the "no host" error you saw earlier
+        - name: docker:20.10.24-dind
+          alias: docker
+          command: ["--tls=false"]
+    variables:
+        # Configure Docker client to talk to the alias "docker" on port 2375
+        DOCKER_HOST: tcp://docker:2375
+        DOCKER_TLS_CERTDIR: ""
+        # Optimize Compose for CI (no interactive, ANSI output)
+        COMPOSE_INTERACTIVE_NO_CLI: 1
     before_script:
-        # We assume apt-get dependencies and php extensions are now in the Dockerfile.
-        # Ensure Composer is available (if not in Dockerfile, install it here)
-        - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
-        # Configure Composer cache
-        - composer config cache-dir .composer/cache
+        # Install docker-compose (the docker image doesn't always have the latest compose plugin)
+        - apk add --no-cache docker-compose
     script:
-        - !reference [ .scripts, ssh ]
-        - composer install --prefer-dist --no-progress
-        - vendor/bin/phpunit
+        # 1. Build the stack (uses your docker/php/Dockerfile if defined in compose)
+        - docker-compose build
+
+        # 2. Install dependencies
+        # We run this inside the 'php' service defined in your docker-compose.yml
+        - docker-compose run --rm php composer install --prefer-dist --no-progress
+
+        # 3. Run Tests
+        - docker-compose run --rm php vendor/bin/phpunit
+
+        # 4. Cleanup (optional but good practice)
+        - docker-compose down
 
 # Matrix of PHP versions for tests
 php:tests:
-    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    image: "php:${PHP_VERSION}-cli"
     extends: .tests_template
     parallel:
         matrix:
@@ -73,7 +74,7 @@ php:tests:
 # Static Analysis job with PHP 8.2
 quality:
     stage: quality
-    image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    image: "jakzal/phpqa:php8.2"
     before_script:
         - !reference [ .scripts, ssh ]
         - composer --version || (curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer)
