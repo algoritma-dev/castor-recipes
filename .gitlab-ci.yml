@@ -35,9 +35,11 @@ build:image:
     stage: build
     image: docker:20.10.24
     services:
-        - docker:20.10.24-dind
+        -   name: docker:20.10.24-dind
+            alias: docker
+            command: [ "--tls=false" ]
     variables:
-        DOCKER_TLS_CERTDIR: "/certs"
+        DOCKER_TLS_CERTDIR: ""
     before_script:
         - unset DOCKER_HOST
         - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
