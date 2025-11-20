@@ -122,7 +122,7 @@ function test_watch(): void
             $args = [$args];
         }
 
-        io()->section('Watching... (Press Ctrl+C to change settings)');
+        io()->section('Watching... (Press Ctrl+C to change settings, or press ENTER to rerun tests)');
 
         $runTests = function () use ($args): void {
             system('clear');
@@ -164,8 +164,42 @@ function test_watch(): void
                 exit(0); // Exit child cleanly on Ctrl+C
             });
 
-            $lastRun = 0;
+            // Set stdin to non-blocking mode
+            stream_set_blocking(\STDIN, false);
 
+            // Disable canonical mode and echo for immediate key detection
+            system('stty -icanon -echo');
+
+            $lastRun = 0;
+            $lastManualRun = 0;
+
+            // Fork another process to handle keyboard input
+            $keyboardPid = pcntl_fork();
+
+            if ($keyboardPid === -1) {
+                io()->error('Could not fork keyboard listener process');
+                exit(1);
+            }
+
+            if ($keyboardPid === 0) {
+                // Keyboard listener child process
+                while (true) {
+                    $input = fread(\STDIN, 1);
+
+                    if ($input === ' ') { // Space bar pressed
+                        $now = microtime(true);
+
+                        if (($now - $lastManualRun) >= 0.5) {
+                            $lastManualRun = $now;
+                            $runTests();
+                        }
+                    }
+
+                    usleep(100000); // Sleep 100ms to avoid busy waiting
+                }
+            }
+
+            // Main watch process
             watch($autoloadPaths, function (string $file) use ($runTests, &$lastRun): void {
                 if (str_ends_with($file, '~')) {
                     return;
@@ -180,9 +214,23 @@ function test_watch(): void
                 $lastRun = $now;
                 $runTests();
             });
+
+            // Kill keyboard listener when watch ends
+            posix_kill($keyboardPid, SIGTERM);
+            pcntl_waitpid($keyboardPid, $status);
         } catch (Throwable) {
-            // Child exits silently on any error
+            // Restore terminal settings before exiting
+            system('stty icanon echo');
+
+            // Kill keyboard listener if it exists
+            if (isset($keyboardPid) && $keyboardPid > 0) {
+                posix_kill($keyboardPid, SIGTERM);
+            }
+
             exit(0);
+        } finally {
+            // Ensure terminal settings are restored
+            system('stty icanon echo');
         }
 
         exit(0);
