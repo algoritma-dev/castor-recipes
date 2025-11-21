@@ -76,10 +76,10 @@ function rector(bool $dryRun = false, string $args = ''): int
     return exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
-#[AsTask(description: 'PHP Rector', namespace: 'qa')]
+#[AsTask(description: 'PHPStan Static Analysis', namespace: 'qa')]
 function phpstan(string $args = ''): int
 {
-    return exit_code(dockerize(\sprintf('%s %s', phpstan_bin(), $args)));
+    return exit_code(dockerize(\sprintf('%s %s --memory-limit=-1', phpstan_bin(), $args)));
 }
 
 #[AsTask(description: 'Run PHPUnit tests in watch mode', namespace: 'qa')]
