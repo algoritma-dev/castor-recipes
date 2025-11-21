@@ -99,6 +99,7 @@ function test_watch(): void
         $answer = io()->choice('What do you want to do?', [
             'a' => 'Run all tests',
             't' => 'Filter by test name',
+            'f' => 'Filter by failing tests',
             'p' => 'Filter by file name',
             'x' => 'Pass anyone arguments you want to PHPUnit',
             'q' => 'Quit',
@@ -109,17 +110,21 @@ function test_watch(): void
         }
 
         $args = [];
+        $args[] = '--cache-result';
         if ($answer === 't') {
             $testName = io()->ask('Enter the test name');
-            $args = ['--filter ' . $testName];
+            $args[] = '--filter ' . $testName;
         }
         if ($answer === 'p') {
             $filename = io()->ask('Enter the file name');
-            $args = [$filename];
+            $args[] = $filename;
         }
         if ($answer === 'x') {
             $args = io()->ask('Enter the plain arguments');
-            $args = [$args];
+            $args[] = $args;
+        }
+        if ($answer === 'f') {
+            $args[] = '--order-by=depends,defects --stop-on-failure';
         }
 
         $runTests = function () use ($args): void {
