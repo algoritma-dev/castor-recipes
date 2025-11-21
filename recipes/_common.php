@@ -12,6 +12,7 @@ use function Castor\run;
 require_once __DIR__ . '/_composer.php';
 require_once __DIR__ . '/_xdebug.php';
 require_once __DIR__ . '/_aspell.php';
+require_once __DIR__ . '/_quality-check.php';
 
 /**
  * Helper to get environment variables from .env via Castor and $_SERVER only.
