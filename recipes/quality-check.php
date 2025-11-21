@@ -124,7 +124,7 @@ function test_watch(): void
             $args[] = $args;
         }
         if ($answer === 'f') {
-            $args[] = '--order-by=depends,defects --stop-on-failure';
+            $args[] = '--order-by=depends,defects --stop-on-failure --stop-on-defect --stop-on-error';
         }
 
         $runTests = function () use ($args): void {
