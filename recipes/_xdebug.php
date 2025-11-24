@@ -5,7 +5,7 @@ use Castor\Attribute\AsTask;
 use function Castor\run;
 use function Castor\io;
 
-#[AsTask(name: 'enable', namespace: 'xdebug', description: 'Enable Xdebug')]
+#[AsTask(name: 'enable', namespace: 'xdebug', description: 'Enable Xdebug', aliases: ['enx'])]
 function xdebug_enable(string $fpmServiceName = 'php-fpm', string $webServerServiceName = 'webserver'): void
 {
     set_env('DOCKER_SERVICE', $fpmServiceName);
@@ -28,7 +28,7 @@ function xdebug_enable(string $fpmServiceName = 'php-fpm', string $webServerServ
     io()->success('Xdebug is enabled. Run `castor xdebug:disable` to disable it again.');
 }
 
-#[AsTask(name: 'disable', namespace: 'xdebug', description: 'Disable Xdebug')]
+#[AsTask(name: 'disable', namespace: 'xdebug', description: 'Disable Xdebug', aliases: ['disx'])]
 function xdebug_disable(string $fpmServiceName = 'php-fpm', string $webServerServiceName = 'webserver'): void
 {
     set_env('DOCKER_SERVICE', $fpmServiceName);
