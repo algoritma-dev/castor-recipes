@@ -12,16 +12,16 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": "^8.2",
+        "php": ">=8.2",
         "composer-plugin-api": "^2.0",
-        "symfony/filesystem": "8.0.0",
+        "symfony/filesystem": "^6.0|^7.0|^8.0",
         "tigitz/php-spellchecker": "*",
         "ext-pcntl": "*",
         "ext-posix": "*"
     },
     "require-dev": {
         "algoritma/php-coding-standard": "^3.0",
-        "jolicode/castor": "^1.0",
+        "jolicode/castor": "^1.1",
         "phpunit/phpunit": "^11.5",
         "roave/security-advisories": "dev-latest"
     },
