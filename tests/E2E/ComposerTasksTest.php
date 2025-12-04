@@ -166,8 +166,8 @@ final class ComposerTasksTest extends TestCase
         self::assertStringContainsString('composer install', $shimLogContent);
 
         // Clean up
-        \exec('rm -rf ' . "{$tempLogDir}/*");
-        \exec('rm -rf ' . $binDir);
-        \exec('rm -rf ' . $tempLogDir);
+        exec('rm -rf ' . "{$tempLogDir}/*");
+        exec('rm -rf ' . $binDir);
+        exec('rm -rf ' . $tempLogDir);
     }
 }

@@ -74,8 +74,8 @@ final class DockerizeTest extends TestCase
         self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $shimLogContent);
 
         // Clean up
-        \exec('rm -rf ' . "{$tempLogDir}/*");
-        \exec('rm -rf ' . $binDir);
-        \exec('rm -rf ' . $tempLogDir);
+        exec('rm -rf ' . "{$tempLogDir}/*");
+        exec('rm -rf ' . $binDir);
+        exec('rm -rf ' . $tempLogDir);
     }
 }
