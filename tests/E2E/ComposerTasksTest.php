@@ -8,6 +8,7 @@ require_once __DIR__ . '/Support/Proc.php';
 
 use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
+use function exec;
 
 final class ComposerTasksTest extends TestCase
 {
@@ -115,10 +116,15 @@ final class ComposerTasksTest extends TestCase
             self::markTestSkipped('Skipping E2E Docker test in CI environment due to filesystem isolation.');
         }
 
+        $tempLogDir = sys_get_temp_dir() . '/castor-recipes-logs-' . uniqid('', true);
+        if (!mkdir($tempLogDir) && !is_dir($tempLogDir)) {
+            self::fail('Unable to create temp log directory');
+        }
+
         $toolShim = __DIR__ . '/fixtures/tool-shim.php';
         $dockerShimSrc = __DIR__ . '/fixtures/docker-shim.php';
 
-        $binDir = sys_get_temp_dir() . '/castor-recipes-bin-' . uniqid('', true);
+        $binDir = $tempLogDir . '/bin'; // Use the new temp log dir for bin
         if (! mkdir($binDir) && ! is_dir($binDir)) {
             self::fail('Unable to create temp bin dir');
         }
@@ -130,8 +136,8 @@ final class ComposerTasksTest extends TestCase
         file_put_contents($dockerShim, $shimContent);
         @chmod($dockerShim, 0o755);
 
-        $shimLog = sys_get_temp_dir() . '/castor-recipes-shim-' . uniqid('', true) . '.log';
-        $dockerLog = sys_get_temp_dir() . '/castor-recipes-docker-' . uniqid('', true) . '.log';
+        $shimLog = $tempLogDir . '/castor-recipes-shim-' . uniqid('', true) . '.log';
+        $dockerLog = $tempLogDir . '/castor-recipes-docker-' . uniqid('', true) . '.log';
 
         $env = [
             'COMPOSER_BIN' => \PHP_BINARY . ' ' . $toolShim,
@@ -159,5 +165,10 @@ final class ComposerTasksTest extends TestCase
         self::assertFileExists($shimLog, 'Tool shim log not created');
         $shimLogContent = file_get_contents($shimLog) ?: '';
         self::assertStringContainsString('composer install', $shimLogContent);
+
+        // Clean up
+        exec('rm -rf ' . "$tempLogDir/*");
+        exec('rm -rf ' . $binDir);
+        exec('rm -rf ' . $tempLogDir);
     }
 }
