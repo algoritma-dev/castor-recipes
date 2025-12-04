@@ -3,14 +3,13 @@
 use Rector\Config\RectorConfig;
 
 $additionalRules = [];
-$rulesProvider = new Algoritma\CodingStandards\Rules\CompositeRulesProvider([
-    new Algoritma\CodingStandards\Rules\RectorRulesProvider(),
-    new Algoritma\CodingStandards\Rules\ArrayRulesProvider($additionalRules),
+$rulesProvider = new Algoritma\CodingStandards\Shared\Rules\CompositeRulesProvider([
+    new Algoritma\CodingStandards\Shared\Rules\ArrayRulesProvider($additionalRules),
 ]);
 
 $autoloadPathProvider = new Algoritma\CodingStandards\AutoloadPathProvider();
 
-$setsProvider = new Algoritma\CodingStandards\Sets\RectorSetsProvider();
+$setsProvider = new Algoritma\CodingStandards\Rector\RectorSetsProvider();
 
 return RectorConfig::configure()
     ->withFileExtensions(['php'])

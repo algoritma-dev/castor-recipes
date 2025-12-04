@@ -11,10 +11,10 @@ $additionalRules = [
         'call_type' => 'self',
     ]
 ];
-$rulesProvider = new Algoritma\CodingStandards\Rules\CompositeRulesProvider([
-    new Algoritma\CodingStandards\Rules\DefaultRulesProvider(),
-    new Algoritma\CodingStandards\Rules\RiskyRulesProvider(),
-    new Algoritma\CodingStandards\Rules\ArrayRulesProvider($additionalRules),
+$rulesProvider = new Algoritma\CodingStandards\Shared\Rules\CompositeRulesProvider([
+    new Algoritma\CodingStandards\PhpCsFixer\Rules\DefaultRulesProvider(),
+    new Algoritma\CodingStandards\PhpCsFixer\Rules\RiskyRulesProvider(),
+    new Algoritma\CodingStandards\Shared\Rules\ArrayRulesProvider($additionalRules),
 ]);
 
 $config = new PhpCsFixer\Config();
