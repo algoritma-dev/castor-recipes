@@ -27,6 +27,7 @@ jobs:
                     extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
                     tools: composer:v2
                     coverage: none # or xdebug, pcov if you need coverage
+                    apt-packages: aspell, aspell-en
 
             -   name: Cache Composer dependencies
                 id: composer-cache
@@ -61,6 +62,7 @@ jobs:
                     extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
                     tools: composer:v2
                     coverage: none
+                    apt-packages: aspell, aspell-en
 
             -   name: Cache Composer dependencies
                 id: composer-cache
