@@ -5,9 +5,9 @@
 $autoloadPathProvider = new Algoritma\CodingStandards\AutoloadPathProvider();
 
 $additionalRules = [];
-$rulesProvider = new Algoritma\CodingStandards\Rules\CompositeRulesProvider([
-    new Algoritma\CodingStandards\Rules\PhpstanRulesProvider(),
-    new Algoritma\CodingStandards\Rules\ArrayRulesProvider($additionalRules),
+$rulesProvider = new Algoritma\CodingStandards\Shared\Rules\CompositeRulesProvider([
+    new Algoritma\CodingStandards\Phpstan\Rules\PhpstanRulesProvider(),
+    new Algoritma\CodingStandards\Shared\Rules\ArrayRulesProvider($additionalRules),
 ]);
 
 /**

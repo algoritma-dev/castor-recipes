@@ -1,0 +1,87 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php-version: ["8.2", "8.3", "8.4"]
+        name: PHP ${{ matrix.php-version }} Tests
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-version }}
+                    extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
+                    tools: composer:v2
+                    coverage: none # or xdebug, pcov if you need coverage
+
+            -   name: Cache Composer dependencies
+                id: composer-cache
+                uses: actions/cache@v3
+                with:
+                    path: |
+                        vendor
+                        ~/.composer/cache
+                    key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: |
+                        ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+            -   name: Install Composer dependencies
+                if: steps.composer-cache.outputs.cache-hit != 'true'
+                run: composer install --prefer-dist --no-progress
+
+            -   name: Run PHPUnit tests
+                run: vendor/bin/phpunit
+
+    quality:
+        runs-on: ubuntu-latest
+        name: Code Quality
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: 8.2 # Use a specific PHP version for quality tools
+                    extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
+                    tools: composer:v2
+                    coverage: none
+
+            -   name: Cache Composer dependencies
+                id: composer-cache
+                uses: actions/cache@v3
+                with:
+                    path: |
+                        vendor
+                        ~/.composer/cache
+                    key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: |
+                        ${{ runner.os }}-php-8.2-
+
+            -   name: Install Composer dependencies
+                if: steps.composer-cache.outputs.cache-hit != 'true'
+                run: composer install --prefer-dist --no-progress
+
+            -   name: Run PHPStan
+                run: vendor/bin/phpstan analyse
+
+            -   name: Run PHP-CS-Fixer (dry run)
+                run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+            -   name: Run Rector (dry run)
+                run: vendor/bin/rector process --dry-run

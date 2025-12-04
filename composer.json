@@ -20,16 +20,10 @@
         "ext-posix": "*"
     },
     "require-dev": {
-        "algoritma/php-coding-standard": "^3.0",
+        "algoritma/php-coding-standards": "^3.0",
         "jolicode/castor": "^1.1",
         "phpunit/phpunit": "^11.5",
         "roave/security-advisories": "dev-latest"
-    },
-    "repositories": {
-        "algoritma-php-cs": {
-            "type": "vcs",
-            "url": "https://phpcs:glpat-Hw9asjC2Q3gX4Cy9PB9k@gitlab.algoritma.it/algoritma/php-coding-standard.git"
-        }
     },
     "autoload": {
         "psr-4": {
@@ -48,7 +42,7 @@
         "sort-packages": true,
         "allow-plugins": {
             "algoritma/castor-recipes": true,
-            "algoritma/php-coding-standard": true,
+            "algoritma/php-coding-standards": true,
             "phpstan/extension-installer": true
         }
     },
