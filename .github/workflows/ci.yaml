@@ -20,6 +20,11 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
+            -   name: Install system dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y --no-install-recommends aspell aspell-en
+
             -   name: Setup PHP
                 uses: shivammathur/setup-php@v2
                 with:
@@ -27,7 +32,6 @@ jobs:
                     extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
                     tools: composer:v2
                     coverage: none # or xdebug, pcov if you need coverage
-                    apt-packages: aspell, aspell-en
 
             -   name: Cache Composer dependencies
                 id: composer-cache
@@ -44,6 +48,23 @@ jobs:
                 if: steps.composer-cache.outputs.cache-hit != 'true'
                 run: composer install --prefer-dist --no-progress
 
+            -   name: Setup SSH (if needed for private repos)
+                # This part is optional and only needed if your composer dependencies
+                # or other parts of your build require SSH access to private Git repositories.
+                # Ensure SSH_PRIVATE_KEY and SSH_PASSPHRASE are set as GitHub Secrets.
+                if: env.SSH_PRIVATE_KEY != ''
+                run: |
+                    mkdir -p ~/.ssh
+                    echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
+                    chmod 600 ~/.ssh/id_rsa
+                    if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
+                        echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
+                    else
+                        ssh-add ~/.ssh/id_rsa
+                    fi
+                    ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
+                    chmod 644 ~/.ssh/known_hosts
+
             -   name: Run PHPUnit tests
                 run: vendor/bin/phpunit
 
@@ -55,6 +76,11 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
+            -   name: Install system dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y --no-install-recommends aspell aspell-en
+
             -   name: Setup PHP
                 uses: shivammathur/setup-php@v2
                 with:
@@ -62,7 +88,6 @@ jobs:
                     extensions: intl, pdo, pdo_mysql, pdo_sqlite, xml, mbstring, pcntl, zip, opcache
                     tools: composer:v2
                     coverage: none
-                    apt-packages: aspell, aspell-en
 
             -   name: Cache Composer dependencies
                 id: composer-cache
@@ -78,6 +103,20 @@ jobs:
             -   name: Install Composer dependencies
                 if: steps.composer-cache.outputs.cache-hit != 'true'
                 run: composer install --prefer-dist --no-progress
+
+            -   name: Setup SSH (if needed for private repos)
+                if: env.SSH_PRIVATE_KEY != ''
+                run: |
+                    mkdir -p ~/.ssh
+                    echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
+                    chmod 600 ~/.ssh/id_rsa
+                    if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
+                        echo "${{ secrets.SSH_PASSPHRASE }}" | ssh-add ~/.ssh/id_rsa
+                    else
+                        ssh-add ~/.ssh/id_rsa
+                    fi
+                    ssh-keyscan gitlab.algoritma.it >> ~/.ssh/known_hosts
+                    chmod 644 ~/.ssh/known_hosts
 
             -   name: Run PHPStan
                 run: vendor/bin/phpstan analyse
