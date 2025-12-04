@@ -40,21 +40,6 @@ castor completion --help
 - **MySQL/PostgreSQL** (`recipes/mysql.php`, `recipes/postgresql.php`) - Database management tasks
 
 ## Installation
-In your existing project:
-
-Add repository source on composer.json:
-
-```
-"repositories": {
-    "algoritma-castor-recipes": {
-        "type": "vcs",
-        "url": "git@gitlab.algoritma.it:algoritma/php-coding-standard.git"
-    }
-}
-```
-
-then run the command
-
 
 ```bash
 composer require --dev algoritma/castor-recipes
