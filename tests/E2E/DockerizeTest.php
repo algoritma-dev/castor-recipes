@@ -8,7 +8,6 @@ require_once __DIR__ . '/Support/Proc.php';
 
 use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
-use function exec;
 
 final class DockerizeTest extends TestCase
 {
@@ -19,7 +18,7 @@ final class DockerizeTest extends TestCase
         }
 
         $tempLogDir = sys_get_temp_dir() . '/castor-recipes-logs-' . uniqid('', true);
-        if (!mkdir($tempLogDir) && !is_dir($tempLogDir)) {
+        if (! mkdir($tempLogDir) && ! is_dir($tempLogDir)) {
             self::fail('Unable to create temp log directory');
         }
 
@@ -75,8 +74,8 @@ final class DockerizeTest extends TestCase
         self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $shimLogContent);
 
         // Clean up
-        exec('rm -rf ' . "$tempLogDir/*");
-        exec('rm -rf ' . $binDir);
-        exec('rm -rf ' . $tempLogDir);
+        \exec('rm -rf ' . "{$tempLogDir}/*");
+        \exec('rm -rf ' . $binDir);
+        \exec('rm -rf ' . $tempLogDir);
     }
 }

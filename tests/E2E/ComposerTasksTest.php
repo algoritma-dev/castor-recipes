@@ -8,7 +8,6 @@ require_once __DIR__ . '/Support/Proc.php';
 
 use Algoritma\CastorRecipes\Tests\E2E\Support\Proc;
 use PHPUnit\Framework\TestCase;
-use function exec;
 
 final class ComposerTasksTest extends TestCase
 {
@@ -117,7 +116,7 @@ final class ComposerTasksTest extends TestCase
         }
 
         $tempLogDir = sys_get_temp_dir() . '/castor-recipes-logs-' . uniqid('', true);
-        if (!mkdir($tempLogDir) && !is_dir($tempLogDir)) {
+        if (! mkdir($tempLogDir) && ! is_dir($tempLogDir)) {
             self::fail('Unable to create temp log directory');
         }
 
@@ -167,8 +166,8 @@ final class ComposerTasksTest extends TestCase
         self::assertStringContainsString('composer install', $shimLogContent);
 
         // Clean up
-        exec('rm -rf ' . "$tempLogDir/*");
-        exec('rm -rf ' . $binDir);
-        exec('rm -rf ' . $tempLogDir);
+        \exec('rm -rf ' . "{$tempLogDir}/*");
+        \exec('rm -rf ' . $binDir);
+        \exec('rm -rf ' . $tempLogDir);
     }
 }
