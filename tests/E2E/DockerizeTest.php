@@ -14,7 +14,7 @@ final class DockerizeTest extends TestCase
 {
     public function testDockerWrapsQaPhpCsFixer(): void
     {
-        if (getenv('GITLAB_CI')) {
+        if (getenv('CI')) {
             self::markTestSkipped('Skipping E2E Docker test in CI environment due to filesystem isolation.');
         }
 

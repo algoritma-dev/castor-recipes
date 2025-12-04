@@ -112,7 +112,7 @@ final class ComposerTasksTest extends TestCase
 
     public function testComposerInstallIsDockerizedWhenEnabled(): void
     {
-        if (getenv('GITLAB_CI')) {
+        if (getenv('CI')) {
             self::markTestSkipped('Skipping E2E Docker test in CI environment due to filesystem isolation.');
         }
 
