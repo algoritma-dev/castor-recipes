@@ -124,7 +124,7 @@ final class PluginTest extends TestCase
 
         $event = $this->createMock(PackageEvent::class);
         // Return an object without getPackage()
-        $event->method('getOperation')->willReturn(new class implements OperationInterface {
+        $event->method('getOperation')->willReturn(new class() implements \Stringable, OperationInterface {
             public function getOperationType(): string
             {
                 return '';
@@ -178,7 +178,7 @@ final class PluginTest extends TestCase
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 0);
 
         $event = $this->createMock(PackageEvent::class);
-        $event->method('getOperation')->willReturn(new class implements OperationInterface {
+        $event->method('getOperation')->willReturn(new class() implements \Stringable, OperationInterface {
             // no getTargetPackage method
             public function getOperationType(): string
             {
