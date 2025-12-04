@@ -272,4 +272,4 @@ Note: Workflows are not yet included in this repository. Contributions are welco
 
 ## License
 
-MIT
+GPL-3.0 License
