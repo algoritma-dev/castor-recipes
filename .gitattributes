@@ -24,8 +24,10 @@ docker-compose.yml export-ignore
 /.github/** export-ignore
 phpunit.xml.dist export-ignore
 phpstan.neon export-ignore
+phpstan-algoritma-config.php export-ignore
 .php-cs-fixer.dist.php export-ignore
 .editorconfig export-ignore
 .env.example export-ignore
 composer.lock export-ignore
+rector.php export-ignore
 
