@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Castor\Attribute\AsArgument;
 use Castor\Attribute\AsTask;
 
+use function Castor\capture;
 use function Castor\run;
 
 require_once __DIR__ . '/_common.php';
@@ -37,22 +38,18 @@ function mysql_flags(?string $user = null, ?string $pass = null, ?string $host =
     return implode(' ', $flags);
 }
 
-#[AsTask(description: 'Drop the database', namespace: 'mysql')]
+#[AsTask(namespace: 'mysql', description: 'Drop the database')]
 function db_drop(?string $user = null, ?string $dbName = null): void
 {
     $user ??= (string) env_value('DB_USER');
     $dbName ??= (string) env_value('DB_NAME');
     $dbService = (string) env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-
     $flags = mysql_flags($user);
-    run(dockerize(sprintf('mysql %s -e \"DROP DATABASE IF EXISTS \`%s\`\"', $flags, $dbName)));
-
-    restore_env('DOCKER_SERVICE');
+    run(dockerize(\sprintf('mysql %s -e \"DROP DATABASE IF EXISTS \`%s\`\"', $flags, $dbName), $dbService, '/'));
 }
 
-#[AsTask(description: 'Create the database', namespace: 'mysql')]
+#[AsTask(namespace: 'mysql', description: 'Create the database')]
 function db_create(?string $user = null, ?string $dbName = null): void
 {
     $user ??= (string) env_value('DB_USER');
@@ -61,55 +58,44 @@ function db_create(?string $user = null, ?string $dbName = null): void
     $collation = (string) env_value('DB_COLLATION', 'utf8mb4_unicode_ci');
     $dbService = (string) env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-
     $flags = mysql_flags($user);
-    run(dockerize(sprintf('mysql %s -e \"CREATE DATABASE \`%s\` CHARACTER SET %s COLLATE %s\"', $flags, $dbName, $charset, $collation)));
-
-    restore_env('DOCKER_SERVICE');
+    run(dockerize(\sprintf('mysql %s -e \"CREATE DATABASE \`%s\` CHARACTER SET %s COLLATE %s\"', $flags, $dbName, $charset, $collation), $dbService, '/'));
 }
 
-#[AsTask(description: 'Restore database from dump file', namespace: 'mysql')]
-function db_restore(#[AsArgument]string $dump, ?string $user = null, ?string $dbName = null): void
+#[AsTask(namespace: 'mysql', description: 'Restore database from dump file')]
+function db_restore(#[AsArgument] string $dump, ?string $user = null, ?string $dbName = null): void
 {
     $user ??= (string) env_value('DB_USER');
     $dbName ??= (string) env_value('DB_NAME');
     $dbService = (string) env_value('DOCKER_DB_SERVICE', 'database');
-
-    set_env('DOCKER_SERVICE', $dbService);
 
     db_drop($user);
     db_create($user);
 
     $flags = mysql_flags($user);
     // Use cat | mysql to support gzcat/zcat upstream if needed by user
-    run(sprintf('cat %s | ', $dump) . dockerize(sprintf('mysql %s %s', $flags, $dbName), null, true));
-
-    restore_env('DOCKER_SERVICE');
+    run(\sprintf('cat %s | ', $dump) . dockerize(\sprintf('mysql %s %s', $flags, $dbName), $dbService, '/', true));
 }
 
-#[AsTask(name: 'dbbackup', description: 'Backup the database', namespace: 'mysql')]
+#[AsTask(name: 'dbbackup', namespace: 'mysql', description: 'Backup the database')]
 function db_backup(?string $user = null, ?string $dbName = null): void
 {
     $user ??= (string) env_value('DB_USER');
     $dbName ??= (string) env_value('DB_NAME');
-    $dumpfile = date('Ymd') . '_' . (string) env_value('DB_NAME') . '.sql';
+    $dumpfile = date('Ymd') . '_' . env_value('DB_NAME') . '.sql';
     $dbService = (string) env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-
     $flags = mysql_flags($user);
-    $gzipAvailable = trim(\Castor\capture(dockerize('which gzip'))) !== '';
+    $gzipAvailable = trim(capture(dockerize('which gzip'))) !== '';
 
     if ($gzipAvailable) {
-        run(dockerize(sprintf('mysqldump %s %s \| gzip \> %s.gz', $flags, $dbName, $dumpfile)));
+        run(dockerize(\sprintf('mysqldump %s %s \| gzip \> %s.gz', $flags, $dbName, $dumpfile), $dbService, '/'));
     } else {
-        run(dockerize(sprintf('mysqldump %s %s \> %s', $flags, $dbName, $dumpfile)));
+        run(dockerize(\sprintf('mysqldump %s %s \> %s', $flags, $dbName, $dumpfile), $dbService, '/'));
     }
-    restore_env('DOCKER_SERVICE');
 }
 
-#[AsTask(name: 'db-tune', description: 'Tune database performance', namespace: 'mysql')]
+#[AsTask(name: 'db-tune', namespace: 'mysql', description: 'Tune database performance')]
 function db_tune(?string $dbHost = null, ?string $user = null, ?string $dbPass = null, ?string $dbName = null): void
 {
     $dbHost ??= (string) env_value('DB_HOST');
@@ -117,14 +103,10 @@ function db_tune(?string $dbHost = null, ?string $user = null, ?string $dbPass =
     $dbPass ??= (string) env_value('DB_PASS');
     $dbService = (string) env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-
-    run(dockerize(sprintf(
+    run(dockerize(\sprintf(
         '/usr/local/bin/mysqltuner.pl --host=%s --user=%s %s',
         $dbHost,
         $user,
         $dbPass !== '' ? '--pass=' . $dbPass : ''
-    )));
-
-    restore_env('DOCKER_SERVICE');
+    ), $dbService, '/'));
 }
