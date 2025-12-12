@@ -41,7 +41,7 @@ function install(?string $env = null, string $installArgs = '--timeout=900000'):
 {
     $env ??= oro_env_value('ORO_ENV', 'dev');
 
-    run(dockerize(\sprintf('%s %s doctrine:database:drop --if-exists --force --env=%s', php(), console_bin(), $env)));
+    db_drop();
     run(dockerize(\sprintf('%s %s doctrine:database:create --env=%s', php(), console_bin(), $env)));
     dockerize(\sprintf('rm -rf var/cache/%s', $env));
     run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgs)));
