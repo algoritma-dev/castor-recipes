@@ -27,6 +27,8 @@ function setup(bool $withDemoData = false): void
 
     $env = oro_env_value('ORO_ENV', 'dev');
     $demoArg = $withDemoData ? ' --with-demo-data' : '';
+
+    dockerize(sprintf('rm -rf var/cache/%s', $env));
     $cmd = \sprintf('%s %s oro:install --env=%s --timeout=1800 --drop-database --no-interaction%s', php(), console_bin(), $env, $demoArg);
     run(dockerize($cmd));
 
