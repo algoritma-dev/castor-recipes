@@ -37,16 +37,13 @@ function setup(bool $withDemoData = false): void
 }
 
 #[AsTask(namespace: 'oro', description: 'Installazione Oro (crea DB e lancia oro:install)')]
-function install(?string $env = null, string $installArgs = '--timeout=900000', bool $reinstall = true): void
+function install(?string $env = null, string $installArgs = '--timeout=900000'): void
 {
-    if ($reinstall) {
-        db_drop();
-        db_create();
-    }
-
     $env ??= oro_env_value('ORO_ENV', 'dev');
-    dockerize(\sprintf('rm -rf var/cache/%s', $env));
+
+    run(dockerize(\sprintf('%s %s doctrine:database:drop --if-exists --force --env=%s', php(), console_bin(), $env)));
     run(dockerize(\sprintf('%s %s doctrine:database:create --env=%s', php(), console_bin(), $env)));
+    dockerize(\sprintf('rm -rf var/cache/%s', $env));
     run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgs)));
 }
 
