@@ -20,7 +20,6 @@ docker-compose.yml export-ignore
 
 # Development files
 /tests/** export-ignore
-/recipes/** export-ignore
 /.github/** export-ignore
 phpunit.xml.dist export-ignore
 phpstan.neon export-ignore
@@ -30,4 +29,8 @@ phpstan-algoritma-config.php export-ignore
 .env.example export-ignore
 composer.lock export-ignore
 rector.php export-ignore
-
+.castor.stub.php export-ignore
+castor.php export-ignore
+.env export-ignore
+tests export-ignore
+docker export-ignore
