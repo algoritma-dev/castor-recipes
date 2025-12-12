@@ -15,13 +15,7 @@ function db_drop(?string $user = null, ?string $dbName = null): void
     $dbName ??= env_value('DB_NAME');
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
-    run(dockerize(sprintf('psql -U %s -c "DROP DATABASE IF EXISTS %s"', $user, $dbName)));
-
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
+    run(dockerize(sprintf('psql -U %s -c "DROP DATABASE IF EXISTS %s"', $user, $dbName), $dbService, '/'));
 }
 
 #[AsTask(description: 'Create UUID extension', namespace: 'psql')]
@@ -31,13 +25,7 @@ function uuid_extension_create(?string $user = null, ?string $dbName = null): vo
     $dbName ??= env_value('DB_NAME');
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
-    run(dockerize(sprintf('psql -U %s -c "\c %s" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""', $user, $dbName)));
-
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
+    run(dockerize(sprintf('psql -U %s -c "\c %s" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""', $user, $dbName), $dbService, '/'));
 }
 
 #[AsTask(description: 'Create the database', namespace: 'psql')]
@@ -47,14 +35,8 @@ function db_create(?string $user = null, ?string $dbName = null): void
     $dbName ??= env_value('DB_NAME');
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
-    run(dockerize(sprintf('psql -U %s -c "CREATE DATABASE %s"', $user, $dbName)));
+    run(dockerize(sprintf('psql -U %s -c "CREATE DATABASE %s"', $user, $dbName), $dbService, '/'));
     uuid_extension_create($user, $dbName);
-
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
 }
 
 #[AsTask(description: 'Restore database from dump file', namespace: 'psql')]
@@ -64,15 +46,9 @@ function db_restore(string $dump, ?string $user = null, ?string $dbName = null):
     $dbName ??= env_value('DB_NAME');
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
     db_drop($user);
     db_create($user);
-    run(sprintf('cat %s | ', $dump) . dockerize(sprintf('psql -U %s -d %s', $user, $dbName), null, true));
-
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
+    run(sprintf('cat %s | ', $dump) . dockerize(sprintf('psql -U %s -d %s', $user, $dbName), $dbService, '/', true));
 }
 
 #[AsTask(name: 'dbbackup', description: 'Backup the database', namespace: 'psql')]
@@ -83,20 +59,14 @@ function db_backup(?string $user = null, ?string $dbName = null): void
     $dumpfile = date('Ymd') . '_' . env_value('DB_NAME') . '.sql';
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
     $gzipAvailable = trim(\Castor\capture(dockerize('which gzip'))) !== '';
 
     if ($gzipAvailable) {
-        run(dockerize(sprintf('pg_dump -U %s %s \| gzip \> %s.gz', $user, $dbName, $dumpfile)));
+        run(dockerize(sprintf('pg_dump -U %s %s \| gzip \> %s.gz', $user, $dbName, $dumpfile), $dbService, '/'));
 
     } else {
-        run(dockerize(sprintf('pg_dump -U %s %s \> %s', $user, $dbName, $dumpfile)));
+        run(dockerize(sprintf('pg_dump -U %s %s \> %s', $user, $dbName, $dumpfile), $dbService, '/'));
     }
-
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
 }
 
 #[AsTask(name: 'db-tune', description: 'Tune database performance', namespace: 'psql')]
@@ -108,16 +78,11 @@ function db_tune(?string $dbHost = null, ?string $user = null, ?string $dbPass =
     $dbName ??= env_value('DB_NAME');
     $dbService ??= env_value('DOCKER_DB_SERVICE', 'database');
 
-    set_env('DOCKER_SERVICE', $dbService);
-    set_env('DOCKER_PROJECT_ROOT', '/');
-
     run(dockerize(sprintf(
         '/usr/local/bin/postgresqltuner.pl --host=%s --database=%s --user=%s --password=%s',
         $dbHost,
         $dbName,
         $user,
         $dbPass
-    )));
-    restore_env('DOCKER_SERVICE');
-    restore_env('DOCKER_PROJECT_ROOT');
+    ), $dbService, '/'));
 }

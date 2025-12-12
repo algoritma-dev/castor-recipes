@@ -20,27 +20,29 @@ require_once __DIR__ . '/_quality-check.php';
 function env_value(string $key, mixed $default = null, ?string $path = null): mixed
 {
     static $dotenvLoaded = false;
-    if ($dotenvLoaded === false) {
-        if ($path === null) {
-            $pathsCandidate = ['.env', '.env-app', '.env.example'];
-            foreach ($pathsCandidate as $pathCandidate) {
-                if (is_file(getcwd() . '/' . $pathCandidate)) {
-                    $path = getcwd() . '/' . $pathCandidate;
-                    load_dot_env($path);
-                }
+//    if ($dotenvLoaded === false) {
+    if ($path === null) {
+        $pathsCandidate = ['.env', '.env-app', '.env.example'];
+        foreach ($pathsCandidate as $pathCandidate) {
+            if (is_file(getcwd() . '/' . $pathCandidate)) {
+                $path = getcwd() . '/' . $pathCandidate;
+                load_dot_env($path);
             }
-        } else {
-            load_dot_env($path);
         }
-
-        $dotenvLoaded = true;
+    } else {
+        load_dot_env($path);
     }
+
+    $dotenvLoaded = true;
+//    }
 
     return (\array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
 }
 
 function set_env(string $key, mixed $value): void
 {
+    var_dump($_ENV, $_SERVER);
+
     if (\array_key_exists($key, $_SERVER)) {
         $_SERVER['orig_' . $key] = $value;
     }
@@ -51,6 +53,7 @@ function set_env(string $key, mixed $value): void
 
     $_SERVER[$key] = $value;
     $_ENV[$key] = $value;
+
     putenv(\sprintf('%s=%s', $key, $value));
 }
 
@@ -77,7 +80,7 @@ function restore_env(string $key): void
  *  - DOCKER_SERVICE (default: workspace)
  *  - DOCKER_COMPOSE_FILE (default: docker-compose.yml)
  */
-function dockerize(string $command, ?string $workdir = null, bool $tty = false): string
+function dockerize(string $command, ?string $service = null, ?string $workdir = null, bool $tty = false): string
 {
     $useDocker = env_value('CASTOR_DOCKER') === '1' || env_value('CASTOR_DOCKER') === 'true';
 
@@ -85,7 +88,7 @@ function dockerize(string $command, ?string $workdir = null, bool $tty = false):
         return $command;
     }
 
-    $service = env_value('DOCKER_SERVICE', 'workspace');
+    $service ??= env_value('DOCKER_SERVICE', 'workspace');
     $compose = env_value('DOCKER_COMPOSE_FILE', 'docker-compose.yml');
 
     if ($workdir === null && env_value('DOCKER_PROJECT_ROOT') !== null) {
