@@ -29,7 +29,7 @@ function setup(bool $withDemoData = false): void
     $env = oro_env_value('ORO_ENV', 'dev');
     $demoArg = $withDemoData ? ' --with-demo-data' : '';
 
-    dockerize(\sprintf('rm -rf var/cache/%s', $env));
+    run(dockerize(\sprintf('rm -rf var/cache/%s', $env)));
     $cmd = \sprintf('%s %s oro:install --env=%s --timeout=900000%s', php(), console_bin(), $env, $demoArg);
     run(dockerize($cmd));
 
@@ -41,7 +41,7 @@ function install(?string $env = null, string $installArgs = '--timeout=900000 --
 {
     $env ??= oro_env_value('ORO_ENV', 'dev');
 
-    dockerize(\sprintf('rm -rf var/cache/%s', $env));
+    run(dockerize(\sprintf('rm -rf var/cache/%s', $env)));
     run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgs)));
 }
 
