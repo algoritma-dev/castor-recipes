@@ -119,7 +119,6 @@ function ci(): void
 function migrations(?string $env = null): void
 {
     $env ??= oro_env_value('ORO_ENV', 'dev');
-    run(dockerize(\sprintf('%s %s cache:clear --env=%s', php(), console_bin(), $env)));
     run(dockerize(\sprintf('%s %s oro:migration:load --force --env=%s', php(), console_bin(), $env)));
 }
 
