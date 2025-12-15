@@ -15,18 +15,77 @@ require_once __DIR__ . '/_aspell.php';
 require_once __DIR__ . '/_quality-check.php';
 
 /**
- * Helper to get environment variables from .env via Castor and $_SERVER only.
+ * Get the dotenv base filename from composer.json extra.runtime.dotenv_path.
+ * Defaults to '.env' if not found.
  */
-function env_value(string $key, mixed $default = null, ?string $path = null): mixed
+function get_dotenv_base_path(): string
+{
+    static $cache = [];
+
+    $composerPath = getcwd() . '/composer.json';
+
+    // Check if already cached for this path
+    if (isset($cache[$composerPath])) {
+        return $cache[$composerPath];
+    }
+
+    if (! is_file($composerPath)) {
+        $cache[$composerPath] = '.env';
+
+        return $cache[$composerPath];
+    }
+
+    $composerContent = file_get_contents($composerPath);
+    if ($composerContent === false) {
+        $cache[$composerPath] = '.env';
+
+        return $cache[$composerPath];
+    }
+
+    $composer = json_decode($composerContent, true, 512, \JSON_THROW_ON_ERROR);
+
+    $cache[$composerPath] = $composer['extra']['runtime']['dotenv_path'] ?? '.env';
+
+    return $cache[$composerPath];
+}
+
+/**
+ * Helper to get environment variables from .env via Castor and $_SERVER only.
+ *
+ * @param string $key The environment variable key to retrieve
+ * @param mixed $default Default value if key not found
+ * @param string|null $path Explicit path to .env file (overrides auto-detection)
+ * @param string|null $environment Environment name (e.g., 'test', 'prod'). If null, uses 'local' as default
+ */
+function env_value(string $key, mixed $default = null, ?string $path = null, ?string $environment = null): mixed
 {
     static $dotenvLoaded = false;
-//    if ($dotenvLoaded === false) {
+
     if ($path === null) {
-        $pathsCandidate = ['.env', '.env-app', '.env.example'];
+        $baseEnvFile = get_dotenv_base_path();
+        $cwd = getcwd();
+
+        // Build the list of candidate files based on environment
+        $pathsCandidate = [];
+
+        if ($environment !== null && $environment !== '') {
+            // Specific environment: try .env.{env} (or .env-app.{env}) with fallback to base
+            $pathsCandidate[] = $baseEnvFile . '.' . $environment;
+            $pathsCandidate[] = $baseEnvFile;
+        } else {
+            // No environment specified: try .env.local (or .env-app.local) with fallback to base
+            $pathsCandidate[] = $baseEnvFile . '.local';
+            $pathsCandidate[] = $baseEnvFile;
+        }
+
+        // Always add .env.example as final fallback
+        $pathsCandidate[] = '.env.example';
+
+        // Load all existing env files (Castor's load_dot_env handles merging)
         foreach ($pathsCandidate as $pathCandidate) {
-            if (is_file(getcwd() . '/' . $pathCandidate)) {
-                $path = getcwd() . '/' . $pathCandidate;
-                load_dot_env($path);
+            $fullPath = $cwd . '/' . $pathCandidate;
+            if (is_file($fullPath)) {
+                load_dot_env($fullPath);
             }
         }
     } else {
@@ -34,7 +93,6 @@ function env_value(string $key, mixed $default = null, ?string $path = null): mi
     }
 
     $dotenvLoaded = true;
-//    }
 
     return (\array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
 }

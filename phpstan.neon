@@ -3,6 +3,8 @@ includes:
 
 parameters:
 	level: 6
+	bootstrapFiles:
+		- phpstan-bootstrap.php
 	excludePaths:
 		- **/node_modules/*
 		- **/vendor/*

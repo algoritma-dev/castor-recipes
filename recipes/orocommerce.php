@@ -14,11 +14,9 @@ function console_bin(): string
     return oro_env_value('ORO_CONSOLE', 'bin/console');
 }
 
-function oro_env_value(string $key, string $default = ''): string
+function oro_env_value(string $key, string $default = '', ?string $environment = null): string
 {
-    $projectRoot = getcwd();
-
-    return env_value($key, $default, $projectRoot . '/.env-app');
+    return env_value($key, $default, null, $environment);
 }
 
 #[AsTask(namespace: 'oro', description: 'Installa dipendenze e setup database OroCommerce (composite)')]
