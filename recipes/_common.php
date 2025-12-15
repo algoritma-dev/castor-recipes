@@ -99,8 +99,6 @@ function env_value(string $key, mixed $default = null, ?string $path = null, ?st
 
 function set_env(string $key, mixed $value): void
 {
-    var_dump($_ENV, $_SERVER);
-
     if (\array_key_exists($key, $_SERVER)) {
         $_SERVER['orig_' . $key] = $value;
     }
