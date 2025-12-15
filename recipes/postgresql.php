@@ -97,9 +97,9 @@ function db_backup(
     $gzipAvailable = trim(capture(dockerize('which gzip'))) !== '';
 
     if ($gzipAvailable) {
-        run(dockerize(\sprintf('pg_dump -U %s %s \| gzip \> %s.gz', $user, $dbName, $dumpfile), $dbService, '/'));
+        run(dockerize(\sprintf('pg_dump -U %s %s | gzip > %s.gz', $user, $dbName, $dumpfile), $dbService, '/'));
     } else {
-        run(dockerize(\sprintf('pg_dump -U %s %s \> %s', $user, $dbName, $dumpfile), $dbService, '/'));
+        run(dockerize(\sprintf('pg_dump -U %s %s > %s', $user, $dbName, $dumpfile), $dbService, '/'));
     }
 }
 

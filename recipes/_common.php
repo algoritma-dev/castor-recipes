@@ -61,6 +61,10 @@ function env_value(string $key, mixed $default = null, ?string $path = null, ?st
 {
     static $dotenvLoaded = false;
 
+    if ($dotenvLoaded) {
+        return $_SERVER[$key] ?? $default;
+    }
+
     if ($path === null) {
         $baseEnvFile = get_dotenv_base_path();
         $cwd = getcwd();
@@ -80,6 +84,9 @@ function env_value(string $key, mixed $default = null, ?string $path = null, ?st
 
         // Always add .env.example as final fallback
         $pathsCandidate[] = '.env.example';
+
+        // Reverse the list to load the most specific first
+        $pathsCandidate = array_reverse($pathsCandidate);
 
         // Load all existing env files (Castor's load_dot_env handles merging)
         foreach ($pathsCandidate as $pathCandidate) {
