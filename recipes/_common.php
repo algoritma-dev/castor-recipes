@@ -104,37 +104,6 @@ function env_value(string $key, mixed $default = null, ?string $path = null, ?st
     return (\array_key_exists($key, $_SERVER) ? $_SERVER[$key] : getenv($key)) ?: $default;
 }
 
-function set_env(string $key, mixed $value): void
-{
-    if (\array_key_exists($key, $_SERVER)) {
-        $_SERVER['orig_' . $key] = $value;
-    }
-
-    if (\array_key_exists($key, $_ENV)) {
-        $_ENV['orig_' . $key] = $value;
-    }
-
-    $_SERVER[$key] = $value;
-    $_ENV[$key] = $value;
-
-    putenv(\sprintf('%s=%s', $key, $value));
-}
-
-function restore_env(string $key): void
-{
-    if (\array_key_exists('orig_' . $key, $_SERVER)) {
-        $_SERVER[$key] = $_SERVER['orig_' . $key];
-        unset($_SERVER['orig_' . $key]);
-    }
-
-    if (\array_key_exists('orig_' . $key, $_ENV)) {
-        $_ENV[$key] = $_ENV['orig_' . $key];
-        unset($_ENV['orig_' . $key]);
-    }
-
-    putenv(\sprintf('%s=%s', $key, $_SERVER[$key] ?? $_ENV[$key] ?? null));
-}
-
 /**
  * Helper: decide if we should run in Docker or locally.
  *

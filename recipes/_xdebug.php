@@ -1,52 +1,122 @@
 <?php
 
+declare(strict_types=1);
+
+use Castor\Attribute\AsOption;
 use Castor\Attribute\AsTask;
 
-use function Castor\run;
+use function Castor\capture;
 use function Castor\io;
+use function Castor\run;
 
-#[AsTask(name: 'enable', namespace: 'xdebug', description: 'Enable Xdebug', aliases: ['enx'])]
-function xdebug_enable(string $fpmServiceName = 'php-fpm', string $webServerServiceName = 'webserver'): void
-{
-    set_env('DOCKER_SERVICE', $fpmServiceName);
-    $iniPath = '/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini';
+#[AsTask(name: 'toggle', namespace: 'xdebug', description: 'Enable or disable Xdebug', aliases: ['xt'])]
+function xdebug_toggle(
+    #[AsOption(description: 'Enable or disable Xdebug')]
+    bool $enable = true,
+    #[AsOption(description: 'The name of the php-fpm service')]
+    string $fpmServiceName = 'php-fpm',
+    #[AsOption(description: 'The name of the webserver service')]
+    string $webServerServiceName = 'webserver'
+): void {
+    $iniPath = find_xdebug_ini();
 
-    try{
-        run(dockerize(sprintf('sudo mv %s.disabled %s', $iniPath, $iniPath)));
-    } catch (\Throwable $e) {
-        io()->warning('Xdebug is already disabled');
+    if ($iniPath === null) {
+        io()->error('Could not find xdebug.ini path.');
+
         return;
     }
 
-    if(env_value('CASTOR_DOCKER') === 'true' || env_value('CASTOR_DOCKER') !== '1') {
-        docker_compose_restart($fpmServiceName);
-        docker_compose_restart($webServerServiceName);
-    }
+    $isDocker = env_value('CASTOR_DOCKER') === 'true' || env_value('CASTOR_DOCKER') === '1';
+    $phpService = $isDocker ? $fpmServiceName : null;
 
-    restore_env('DOCKER_SERVICE');
+    $enabledPath = $iniPath;
+    $disabledPath = "{$iniPath}.disabled";
 
-    io()->success('Xdebug is enabled. Run `castor xdebug:disable` to disable it again.');
-}
-
-#[AsTask(name: 'disable', namespace: 'xdebug', description: 'Disable Xdebug', aliases: ['disx'])]
-function xdebug_disable(string $fpmServiceName = 'php-fpm', string $webServerServiceName = 'webserver'): void
-{
-    set_env('DOCKER_SERVICE', $fpmServiceName);
-    $iniPath = '/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini';
+    $source = $enable ? $disabledPath : $enabledPath;
+    $target = $enable ? $enabledPath : $disabledPath;
+    $inverseAction = $enable ? 'enabled' : 'disabled';
 
     try {
-        run(dockerize(sprintf('sudo mv %s %s.disabled', $iniPath, $iniPath)));
-    } catch (\Throwable $e) {
-        io()->warning('Xdebug is already disabled');
+        run(dockerize(\sprintf('sudo mv %s %s', $source, $target), $phpService));
+    } catch (Throwable) {
+        io()->warning("Xdebug is already {$inverseAction}.");
+
         return;
     }
 
-    if(env_value('CASTOR_DOCKER') === 'true' || env_value('CASTOR_DOCKER') !== '1') {
+    if ($isDocker) {
         docker_compose_restart($fpmServiceName);
         docker_compose_restart($webServerServiceName);
     }
 
-    restore_env('DOCKER_SERVICE');
+    if ($inverseAction === 'enabled') {
+        io()->success("Xdebug is {$inverseAction}. Run `castor xdebug` to disable it again.");
+    } else {
+        io()->success("Xdebug is {$inverseAction}. Run `castor xdebug --enable` to enable it again.");
+    }
+}
 
-    io()->success('Xdebug is disabled. Run `castor xdebug:enable` to enable it again.');
+function find_xdebug_ini(): ?string
+{
+    $isDocker = env_value('CASTOR_DOCKER') === 'true' || env_value('CASTOR_DOCKER') === '1';
+    $phpService = $isDocker ? env_value('DOCKER_SERVICE', 'workspace') : null;
+
+    $phpIniOutput = capture(dockerize('php --ini', $phpService));
+    $lines = explode("\n", $phpIniOutput);
+    $scanDir = null;
+
+    // Find the directory of .ini files
+    foreach ($lines as $line) {
+        if (str_starts_with(trim($line), 'Scan for additional .ini files in:')) {
+            $scanDir = trim(str_replace('Scan for additional .ini files in:', '', $line));
+            break;
+        }
+    }
+
+    if ($scanDir === null) {
+        io()->error('Could not find PHP scan dir for ini files.');
+
+        return null;
+    }
+
+    // Find a file that contains "xdebug" in its name, with or without .disabled extension
+    $command = \sprintf("find %s -name '*xdebug.ini*' -print -quit", $scanDir);
+    $iniPath = capture(dockerize($command, $phpService));
+    $iniPath = trim($iniPath);
+
+    if ($iniPath === '' || $iniPath === '0') {
+        // Fallback for older PHP versions from original script
+        foreach ($lines as $line) {
+            if (str_contains($line, 'Loaded Configuration File:')) {
+                $phpIniPath = trim(str_replace('Loaded Configuration File:', '', $line));
+                // This is a common pattern, but it's a guess.
+                $iniPath = \dirname($phpIniPath) . '/conf.d/docker-php-ext-xdebug.ini';
+
+                if ($isDocker) {
+                    $checkFileExists = capture(dockerize("test -f {$iniPath} && echo 'true'", $phpService));
+                    if (trim($checkFileExists) === 'true') {
+                        break;
+                    }
+                    $checkFileExists = capture(dockerize("test -f {$iniPath}.disabled && echo 'true'", $phpService));
+                    if (trim($checkFileExists) === 'true') {
+                        break;
+                    }
+                } elseif (file_exists($iniPath) || file_exists($iniPath . '.disabled')) {
+                    break;
+                }
+                $iniPath = null;
+            }
+        }
+    }
+
+    if (\in_array($iniPath, [null, '', '0'], true)) {
+        return null;
+    }
+
+    // The logic to enable/disable renames the file, so we should return the path without .disabled
+    if (str_ends_with($iniPath, '.disabled')) {
+        return substr($iniPath, 0, -9);
+    }
+
+    return $iniPath;
 }
