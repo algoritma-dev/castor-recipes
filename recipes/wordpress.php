@@ -91,13 +91,13 @@ function user_create_admin(string $user = 'admin', string $pass = 'Admin123', st
     )));
 }
 
-#[AsTask(description: 'Database export (to file, set WP_DB_EXPORT default db.sql)', namespace: 'wp')]
+#[AsTask(description: 'Database export (to file, set WP_DB_EXPORT default db.sql)', namespace: 'wp', aliases: ['wex'])]
 function db_export(string $dump): void
 {
     run(dockerize(sprintf('%s db export %s', bin(), $dump)));
 }
 
-#[AsTask(description: 'Database import (from file, set WP_DB_IMPORT)', namespace: 'wp')]
+#[AsTask(description: 'Database import (from file, set WP_DB_IMPORT)', namespace: 'wp', aliases: ['wim'])]
 function db_import(string $dump): void
 {
     run(dockerize(sprintf('%s db import %s', bin(), $dump)));
@@ -109,7 +109,7 @@ function search_replace(string $from, string $to): void
     run(dockerize(sprintf('%s search-replace %s %s --all-tables', bin(), $from, $to)));
 }
 
-#[AsTask(description: 'Flush caches (if any caching plugin is present)', namespace: 'wp')]
+#[AsTask(description: 'Flush caches (if any caching plugin is present)', namespace: 'wp', aliases: ['wcf'])]
 function cache_flush(): void
 {
     cli('cache flush');

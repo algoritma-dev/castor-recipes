@@ -19,7 +19,7 @@ function system_install(string $args = '--create-database --basic-setup --force'
     run(dockerize(\sprintf('%s %s system:install %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Rebuild cache and indexes', namespace: 'sw')]
+#[AsTask(description: 'Rebuild cache and indexes', namespace: 'sw', aliases: ['swb'])]
 function build(bool $storefront = true, bool $admin = true, string $args = ''): void
 {
     cache_clear();
@@ -38,19 +38,19 @@ function cache_clear(string $args = '--no-debug'): void
     run(dockerize(\sprintf('%s %s cache:clear %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Build Storefront (if present)', namespace: 'sw')]
+#[AsTask(description: 'Build Storefront', namespace: 'sw')]
 function storefront_build(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s storefront:build %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Build Administration (if present)', namespace: 'sw')]
+#[AsTask(description: 'Build Administration', namespace: 'sw')]
 function administration_build(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s administration:build %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Run PHP tests (PHPUnit)', namespace: 'sw')]
+#[AsTask(description: 'Run PHP tests (PHPUnit)', namespace: 'sw', aliases: ['swt'])]
 function test(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
@@ -83,7 +83,7 @@ function theme_compile(string $args = ''): void
     run(dockerize(\sprintf('%s %s theme:compile %s', php(), sw_console_bin(), $args)));
 }
 
-#[AsTask(description: 'Run DB migrations (non-destructive)', namespace: 'sw')]
+#[AsTask(description: 'Run DB migrations (non-destructive)', namespace: 'sw', aliases: ['swm'])]
 function migrate(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s database:migrate %s', php(), sw_console_bin(), $args)));
@@ -112,7 +112,7 @@ function admin_create(string $email = 'admin@shopware.com', string $password = '
     )));
 }
 
-#[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sw')]
+#[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sw', aliases: ['swc'])]
 function console(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s %s', php(), sw_console_bin(), $args)));

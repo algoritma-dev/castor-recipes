@@ -43,7 +43,7 @@ function install(?string $env = null, string $installArgs = '--timeout=900000 --
     run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgs)));
 }
 
-#[AsTask(namespace: 'oro', description: 'Ricostruisce cache e assets')]
+#[AsTask(namespace: 'oro', description: 'Ricostruisce cache e assets', aliases: ['ob'])]
 function build(?string $env = null): void
 {
     $env ??= oro_env_value('ORO_ENV', 'dev');
@@ -52,7 +52,7 @@ function build(?string $env = null): void
     run(dockerize(\sprintf('%s %s oro:assets:build', php(), console_bin())));
 }
 
-#[AsTask(namespace: 'oro', description: 'Esegue i test (PHPUnit)')]
+#[AsTask(namespace: 'oro', description: 'Esegue i test (PHPUnit)', aliases: ['ot'])]
 function test(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
@@ -84,7 +84,7 @@ function assets_build(): void
     run(dockerize(\sprintf('%s %s oro:assets:build', php(), console_bin())));
 }
 
-#[AsTask(namespace: 'oro', description: 'Clear caches')]
+#[AsTask(namespace: 'oro', description: 'Clear caches', aliases: ['occ'])]
 function cache_clear(?string $env = null, string $args = ''): void
 {
     $env ??= oro_env_value('ORO_ENV', 'dev');
@@ -100,7 +100,7 @@ function logs_tail(?string $env = null, string $lines = '200'): void
     run(dockerize(\sprintf('tail -n %s -f %s', $lines, $file)));
 }
 
-#[AsTask(namespace: 'oro', description: 'Proxy to bin/console con ARGS')]
+#[AsTask(namespace: 'oro', description: 'Proxy to bin/console con ARGS', aliases: ['oc'])]
 function console(string $args = ''): void
 {
     run(dockerize(\sprintf('%s %s %s', php(), console_bin(), $args)));

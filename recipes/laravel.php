@@ -13,7 +13,7 @@ function artisan_bin(): string
     return 'artisan';
 }
 
-#[AsTask(description: 'Proxy to artisan with ARGS', namespace: 'laravel')]
+#[AsTask(description: 'Proxy to artisan with ARGS', namespace: 'laravel', aliases: ['la'])]
 function artisan(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s %s', php(), artisan_bin(), $args)));
@@ -32,14 +32,14 @@ function migrate_seed(): void
     seed();
 }
 
-#[AsTask(description: 'Clear and rebuild cache', namespace: 'laravel')]
+#[AsTask(description: 'Clear and rebuild cache', namespace: 'laravel', aliases: ['lcc'])]
 function cache(): void
 {
     artisan('optimize:clear');
     artisan('optimize');
 }
 
-#[AsTask(description: 'Run tests (Pest/PHPUnit)', namespace: 'laravel')]
+#[AsTask(description: 'Run tests (Pest/PHPUnit)', namespace: 'laravel', aliases: ['lt'])]
 function test(string $args = ''): void
 {
     $cmd = file_exists('vendor/bin/pest') ? 'vendor/bin/pest' : phpunit_bin();
@@ -52,13 +52,13 @@ function queue(): void
     artisan('queue:work --tries=3 --timeout=120');
 }
 
-#[AsTask(description: 'Start Laravel development server', namespace: 'laravel')]
+#[AsTask(description: 'Start Laravel development server', namespace: 'laravel', aliases: ['ls'])]
 function serve(): void
 {
     artisan('serve');
 }
 
-#[AsTask(description: 'Run database migrations', namespace: 'laravel')]
+#[AsTask(description: 'Run database migrations', namespace: 'laravel', aliases: ['lm'])]
 function migrate(): void
 {
     artisan('migrate --force');

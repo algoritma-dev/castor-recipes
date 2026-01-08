@@ -23,7 +23,7 @@ function getAspellBinaryPath(): string
     return __DIR__ . '/../bin/alg-aspell';
 }
 
-#[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)')]
+#[AsTask(name: 'check', namespace: 'aspell', description: 'Find spelling mistakes in text files (md, txt, yaml, json)', aliases: ['spell'])]
 function aspell_check_text(string $lang = 'en', bool $ignoreAll = false): int
 {
     $binary = getAspellBinaryPath();
@@ -32,7 +32,7 @@ function aspell_check_text(string $lang = 'en', bool $ignoreAll = false): int
     return exit_code(dockerize("php {$binary} check-text --lang={$lang}{$ignoreAllFlag}"));
 }
 
-#[AsTask(name: 'check-code', namespace: 'aspell', description: 'Find spelling mistakes in PHP code identifiers')]
+#[AsTask(name: 'check-code', namespace: 'aspell', description: 'Find spelling mistakes in PHP code identifiers', aliases: ['sc'])]
 function aspell_check_code(string $lang = 'en', bool $ignoreAll = false): int
 {
     $binary = getAspellBinaryPath();
@@ -41,7 +41,7 @@ function aspell_check_code(string $lang = 'en', bool $ignoreAll = false): int
     return exit_code(dockerize("php {$binary} check-code --lang={$lang}{$ignoreAllFlag}"));
 }
 
-#[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)')]
+#[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)', aliases: ['spell-all'])]
 function aspell_check_all(string $lang = 'en', string $files = '', bool $ignoreAll = false): int
 {
     $binary = getAspellBinaryPath();
@@ -51,7 +51,7 @@ function aspell_check_all(string $lang = 'en', string $files = '', bool $ignoreA
     return exit_code(dockerize("php {$binary} check-all --lang={$lang}{$ignoreAllFlag}{$filesArg}"));
 }
 
-#[AsTask(name: 'add-word', namespace: 'aspell', description: 'Add a word to the personal dictionary')]
+#[AsTask(name: 'add-word', namespace: 'aspell', description: 'Add a word to the personal dictionary', aliases: ['aw'])]
 function aspell_add_word(string $word, string $lang = 'en'): int
 {
     $binary = getAspellBinaryPath();

@@ -37,7 +37,7 @@ function test(): void
 }
 
 
-#[AsTask(description: 'Run setup upgrade (DB/schema updates)', namespace: 'magento')]
+#[AsTask(description: 'Run setup upgrade (DB/schema updates)', namespace: 'magento', aliases: ['msu'])]
 function setup_upgrade(): void
 {
     run(dockerize('php bin/magento setup:upgrade'));
@@ -61,13 +61,13 @@ function cache_clean(): void
     run(dockerize('php bin/magento cache:clean'));
 }
 
-#[AsTask(description: 'Cache flush', namespace: 'magento')]
+#[AsTask(description: 'Cache flush', namespace: 'magento', aliases: ['mcf'])]
 function cache_flush(): void
 {
     run(dockerize('php bin/magento cache:flush'));
 }
 
-#[AsTask(description: 'Reindex all', namespace: 'magento')]
+#[AsTask(description: 'Reindex all', namespace: 'magento', aliases: ['mri'])]
 function indexer_reindex(): void
 {
     run(dockerize('php bin/magento indexer:reindex'));
@@ -125,7 +125,7 @@ function m2_console_bin(): string
     return env_value('M2_BIN', 'bin/magento');
 }
 
-#[AsTask(description: 'Proxy to bin/magento with ARGS', namespace: 'magento')]
+#[AsTask(description: 'Proxy to bin/magento with ARGS', namespace: 'magento', aliases: ['mc'])]
 function console(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s %s', php(), m2_console_bin(), $args)));

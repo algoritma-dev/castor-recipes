@@ -17,7 +17,7 @@ function symfony_bin(): string
     return env_value('SYMFONY_BIN', 'symfony');
 }
 
-#[AsTask(description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)', namespace: 'sf')]
+#[AsTask(description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)', namespace: 'sf', aliases: ['sfs'])]
 function serve(string $flags = '-d'): void
 {
     run(sprintf('%s server:start %s', symfony_bin(), $flags));
@@ -29,7 +29,7 @@ function serve_stop(): void
     run(sprintf('%s server:stop', symfony_bin()));
 }
 
-#[AsTask(description: 'Run Doctrine migrations', namespace: 'sf')]
+#[AsTask(description: 'Run Doctrine migrations', namespace: 'sf', aliases: ['sfm'])]
 function migrate(string $args = '--no-interaction'): void
 {
     run(dockerize(sprintf('%s %s doctrine:migrations:migrate %s', php(), console_bin(), $args)));
@@ -41,7 +41,7 @@ function migrate_diff(string $args = '--no-interaction'): void
     run(dockerize(sprintf('%s %s doctrine:migrations:diff %s', php(), console_bin(), $args)));
 }
 
-#[AsTask(description: 'Clear Symfony cache', namespace: 'sf')]
+#[AsTask(description: 'Clear Symfony cache', namespace: 'sf', aliases: ['sfcc'])]
 function cache_clear(string $args = '--no-debug'): void
 {
     run(dockerize(sprintf('%s %s cache:clear %s', php(), console_bin(), $args)));
@@ -60,7 +60,7 @@ function cache_clear_warmup(): void
     cache_warmup();
 }
 
-#[AsTask(description: 'Run tests (PHPUnit)', namespace: 'sf')]
+#[AsTask(description: 'Run tests (PHPUnit)', namespace: 'sf', aliases: ['sft'])]
 function test(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
@@ -158,7 +158,7 @@ function logs_tail(string $lines = '200'): void
     run(dockerize(sprintf('tail -n %s %s', $lines, $file)));
 }
 
-#[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf')]
+#[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf', aliases: ['sfc'])]
 function console(string $args = ''): void
 {
     run(dockerize(sprintf('%s %s %s', php(), console_bin(), $args)));

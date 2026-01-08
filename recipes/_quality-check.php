@@ -29,12 +29,16 @@ function phpstan_bin(): string
     return (string) env_value('PHPSTAN_BIN', is_file('vendor/bin/phpstan') ? 'vendor/bin/phpstan' : 'bin/phpstan');
 }
 
-#[AsTask(description: 'Pre commit code analysis', namespace: 'qa')]
-function pre_commit(): int
+#[AsTask(description: 'Pre commit code analysis', namespace: 'qa', aliases: ['pc'])]
+function pre_commit(bool $ignoreChanges = false): int
 {
-    $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
-    $modifiedFiles = array_filter(explode("\n", trim($captured)));
-    $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
+    $filesArg = '';
+
+    if (!$ignoreChanges) {
+        $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
+        $modifiedFiles = array_filter(explode("\n", trim($captured)));
+        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
+    }
 
     if (rector(false, $filesArg) !== 0) {
         return 1;
@@ -59,7 +63,7 @@ function pre_commit(): int
     return 0;
 }
 
-#[AsTask(description: 'PHP CS Fixer', namespace: 'qa')]
+#[AsTask(description: 'PHP CS Fixer', namespace: 'qa', aliases: ['csf', 'fix'])]
 function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): int
 {
     if ($files !== '') {
@@ -70,19 +74,19 @@ function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): i
     return exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
 }
 
-#[AsTask(description: 'PHP Rector', namespace: 'qa')]
+#[AsTask(description: 'PHP Rector', namespace: 'qa', aliases: ['rec'])]
 function rector(bool $dryRun = false, string $args = ''): int
 {
     return exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
 }
 
-#[AsTask(description: 'PHPStan Static Analysis', namespace: 'qa')]
+#[AsTask(description: 'PHPStan Static Analysis', namespace: 'qa', aliases: ['stan'])]
 function phpstan(string $args = ''): int
 {
     return exit_code(dockerize(\sprintf('%s %s --memory-limit=-1', phpstan_bin(), $args)));
 }
 
-#[AsTask(description: 'Run PHPUnit tests in watch mode', namespace: 'qa')]
+#[AsTask(description: 'Run PHPUnit tests in watch mode', namespace: 'qa', aliases: ['tw', 'watch'])]
 function test_watch(): void
 {
     // Enable async signals to catch Ctrl+C immediately
@@ -245,7 +249,7 @@ function test_watch(): void
     }
 }
 
-#[AsTask(namespace: 'qa', description: 'Run all tests (PHPUnit)')]
+#[AsTask(namespace: 'qa', description: 'Run all tests (PHPUnit)', aliases: ['t'])]
 function tests(
     #[AsRawTokens]
     array $args = []
