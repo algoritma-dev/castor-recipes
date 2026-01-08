@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Castor\Attribute\AsArgument;
 use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
+use Castor\Helper\PathHelper;
 use Symfony\Component\Filesystem\Path;
 
 use function Castor\capture;
@@ -29,26 +29,26 @@ function phpstan_bin(): string
     return (string) env_value('PHPSTAN_BIN', is_file('vendor/bin/phpstan') ? 'vendor/bin/phpstan' : 'bin/phpstan');
 }
 
-#[AsTask(description: 'Pre commit code analysis', namespace: 'qa', aliases: ['pc'])]
+#[AsTask(namespace: 'qa', description: 'Pre commit code analysis', aliases: ['pc'])]
 function pre_commit(bool $ignoreChanges = false): int
 {
     $filesArg = '';
 
-    if (!$ignoreChanges) {
+    if (! $ignoreChanges) {
         $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
         $modifiedFiles = array_filter(explode("\n", trim($captured)));
-        $filesArg = trim(implode(' ', array_map(fn (string $file): string => Path::makeRelative($file, getcwd()), $modifiedFiles)));
+        $filesArg = array_map(fn (string $file): string => Path::makeRelative($file, PathHelper::getRoot()), $modifiedFiles);
     }
 
-    if (rector(false, $filesArg) !== 0) {
+    if (rector($filesArg) !== 0) {
         return 1;
     }
 
-    if (php_cs_fixer(false, $filesArg) !== 0) {
+    if (php_cs_fixer($filesArg) !== 0) {
         return 1;
     }
 
-    if (phpstan('analyse --memory-limit=-1') !== 0) {
+    if (phpstan(['analyse --memory-limit=-1']) !== 0) {
         return 1;
     }
 
@@ -63,30 +63,36 @@ function pre_commit(bool $ignoreChanges = false): int
     return 0;
 }
 
-#[AsTask(description: 'PHP CS Fixer', namespace: 'qa', aliases: ['csf', 'fix'])]
-function php_cs_fixer(bool $dryRun = false, #[AsArgument] string $files = ''): int
+#[AsTask(namespace: 'qa', description: 'PHP CS Fixer', aliases: ['csf', 'fix'])]
+function php_cs_fixer(#[AsRawTokens] array $files = []): int
 {
+    $files = implode(' ', $files);
+
     if ($files !== '') {
         $config = (string) env_value('PHPCSFIXER_CONFIG', '.php-cs-fixer.dist.php');
         $files = '--config=' . $config . ' -- ' . $files;
     }
 
-    return exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s %s', $dryRun ? '--dry-run' : '', $files)));
+    return exit_code(dockerize(\sprintf(phpcsfixer_bin() . ' fix %s', $files)));
 }
 
-#[AsTask(description: 'PHP Rector', namespace: 'qa', aliases: ['rec'])]
-function rector(bool $dryRun = false, string $args = ''): int
-{
-    return exit_code(dockerize(\sprintf('%s %s %s', rector_bin(), $dryRun ? '--dry-run' : '', $args)));
+#[AsTask(namespace: 'qa', description: 'PHP Rector', aliases: ['rec'])]
+function rector(
+    #[AsRawTokens]
+    array $args = []
+): int {
+    return exit_code(dockerize(\sprintf('%s %s', rector_bin(), implode(' ', $args))));
 }
 
-#[AsTask(description: 'PHPStan Static Analysis', namespace: 'qa', aliases: ['stan'])]
-function phpstan(string $args = ''): int
-{
-    return exit_code(dockerize(\sprintf('%s %s --memory-limit=-1', phpstan_bin(), $args)));
+#[AsTask(namespace: 'qa', description: 'PHPStan Static Analysis', aliases: ['stan'])]
+function phpstan(
+    #[AsRawTokens]
+    array $args = []
+): int {
+    return exit_code(dockerize(\sprintf('%s %s --memory-limit=-1', phpstan_bin(), implode(' ', $args))));
 }
 
-#[AsTask(description: 'Run PHPUnit tests in watch mode', namespace: 'qa', aliases: ['tw', 'watch'])]
+#[AsTask(namespace: 'qa', description: 'Run PHPUnit tests in watch mode', aliases: ['tw', 'watch'])]
 function test_watch(): void
 {
     // Enable async signals to catch Ctrl+C immediately
@@ -151,12 +157,12 @@ function test_watch(): void
 
         if ($pid !== 0) {
             // Parent process: ignore SIGINT and wait for child
-            pcntl_signal(SIGINT, SIG_IGN);
+            pcntl_signal(\SIGINT, \SIG_IGN);
 
             pcntl_waitpid($pid, $status);
 
             // Restore default signal handler
-            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(\SIGINT, \SIG_DFL);
 
             // Restore terminal settings in case child process left it in non-canonical mode
             system('stty icanon echo');
@@ -172,7 +178,7 @@ function test_watch(): void
         // Child process: do the watching
         try {
             // Reset signal handler for child
-            pcntl_signal(SIGINT, function (): void {
+            pcntl_signal(\SIGINT, function (): void {
                 exit(0); // Exit child cleanly on Ctrl+C
             });
 
@@ -228,7 +234,7 @@ function test_watch(): void
             });
 
             // Kill keyboard listener when watch ends
-            posix_kill($keyboardPid, SIGTERM);
+            posix_kill($keyboardPid, \SIGTERM);
             pcntl_waitpid($keyboardPid, $status);
         } catch (Throwable) {
             // Restore terminal settings before exiting
@@ -236,7 +242,7 @@ function test_watch(): void
 
             // Kill keyboard listener if it exists
             if (isset($keyboardPid) && $keyboardPid > 0) {
-                posix_kill($keyboardPid, SIGTERM);
+                posix_kill($keyboardPid, \SIGTERM);
             }
 
             exit(0);

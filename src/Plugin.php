@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Algoritma\CastorRecipes;
 
+use Castor\Helper\PathHelper;
 use Composer\Composer;
 use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\DependencyResolver\Operation\UpdateOperation;
@@ -19,6 +20,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
     private Composer $composer;
 
     private IOInterface $io;
+
+    private string $projectRoot;
 
     public function activate(Composer $composer, IOInterface $io): void
     {
@@ -117,8 +120,8 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         asort($recipes);
 
         $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-        $projectRoot = \dirname((string) $vendorDir);
-        $castorFile = $projectRoot . '/castor.php';
+        $this->projectRoot = \dirname((string) $vendorDir);
+        $castorFile = $this->projectRoot . '/castor.php';
         $filesystem = new Filesystem();
 
         // Read the recipes already present in the castor.php file
@@ -253,7 +256,7 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
 
     private function relativeToCwd(string $path): string
     {
-        $cwd = getcwd() ?: '';
+        $cwd = $this->projectRoot ?? PathHelper::getRoot(throw: false);
 
         return str_starts_with($path, $cwd) ? ltrim(substr($path, \strlen($cwd)), \DIRECTORY_SEPARATOR) : $path;
     }

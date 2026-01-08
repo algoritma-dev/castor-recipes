@@ -17,12 +17,15 @@ require_once __DIR__ . '/_quality-check.php';
 /**
  * Get the dotenv base filename from composer.json extra.runtime.dotenv_path.
  * Defaults to '.env' if not found.
+ *
+ * @param string|null $directory The directory to search for composer.json. If null, uses PathHelper::getRoot()
  */
-function get_dotenv_base_path(): string
+function get_dotenv_base_path(?string $directory = null): string
 {
     static $cache = [];
 
-    $composerPath = getcwd() . '/composer.json';
+    $root = $directory ?? PathHelper::getRoot(throw: false);
+    $composerPath = $root . '/composer.json';
 
     // Check if already cached for this path
     if (isset($cache[$composerPath])) {
@@ -67,7 +70,7 @@ function env_value(string $key, mixed $default = null, ?string $path = null, ?st
 
     if ($path === null) {
         $baseEnvFile = get_dotenv_base_path();
-        $cwd = getcwd();
+        $cwd = PathHelper::getRoot();
 
         // Build the list of candidate files based on environment
         $pathsCandidate = [];

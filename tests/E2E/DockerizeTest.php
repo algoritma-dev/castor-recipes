@@ -71,7 +71,7 @@ final class DockerizeTest extends TestCase
         // The inner command arguments are recorded by the tool shim, not the docker shim
         self::assertFileExists($shimLog, 'Tool shim log not created');
         $shimLogContent = file_get_contents($shimLog) ?: '';
-        self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $shimLogContent);
+        self::assertStringContainsString('php-cs-fixer fix --config=.php-cs-fixer.dist.php -- --dry-run src/Foo.php', $shimLogContent);
 
         // Clean up
         exec('rm -rf ' . "{$tempLogDir}/*");

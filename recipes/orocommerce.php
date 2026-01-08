@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
@@ -35,12 +36,16 @@ function setup(bool $withDemoData = false): void
 }
 
 #[AsTask(namespace: 'oro', description: 'Installazione Oro (crea DB e lancia oro:install)')]
-function install(?string $env = null, string $installArgs = '--timeout=900000 --drop-database'): void
-{
+function install(
+    ?string $env = null,
+    #[AsRawTokens]
+    array $installArgs = []
+): void {
     $env ??= oro_env_value('ORO_ENV', 'dev');
+    $installArgsStr = $installArgs === [] ? '--timeout=900000 --drop-database' : implode(' ', $installArgs);
 
     run(dockerize(\sprintf('rm -rf var/cache/%s', $env)));
-    run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgs)));
+    run(dockerize(\sprintf('%s %s oro:install --env=%s %s', php(), console_bin(), $env, $installArgsStr)));
 }
 
 #[AsTask(namespace: 'oro', description: 'Ricostruisce cache e assets', aliases: ['ob'])]
@@ -53,28 +58,39 @@ function build(?string $env = null): void
 }
 
 #[AsTask(namespace: 'oro', description: 'Esegue i test (PHPUnit)', aliases: ['ot'])]
-function test(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+function test(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s', phpunit_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'oro', description: 'Run Oro update (database and schema)')]
-function update(?string $env = null, string $args = '--timeout=1800 --no-interaction'): void
-{
+function update(
+    ?string $env = null,
+    #[AsRawTokens]
+    array $args = []
+): void {
     $env ??= oro_env_value('ORO_ENV', 'dev');
-    run(dockerize(\sprintf('%s %s oro:platform:update --env=%s %s', php(), console_bin(), $env, $args)));
+    $argsStr = $args === [] ? '--timeout=1800 --no-interaction' : implode(' ', $args);
+    run(dockerize(\sprintf('%s %s oro:platform:update --env=%s %s', php(), console_bin(), $env, $argsStr)));
 }
 
 #[AsTask(namespace: 'oro', description: 'Consume message queue')]
-function mq_consume(string $args = '--no-interaction'): void
-{
-    run(dockerize(\sprintf('%s %s oro:message-queue:consume %s', php(), console_bin(), $args)));
+function mq_consume(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $argsStr = $args === [] ? '--no-interaction' : implode(' ', $args);
+    run(dockerize(\sprintf('%s %s oro:message-queue:consume %s', php(), console_bin(), $argsStr)));
 }
 
 #[AsTask(namespace: 'oro', description: 'Reindex search')]
-function search_reindex(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s oro:search:reindex %s', php(), console_bin(), $args)));
+function search_reindex(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s oro:search:reindex %s', php(), console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'oro', description: 'Dump and build assets')]
@@ -85,11 +101,14 @@ function assets_build(): void
 }
 
 #[AsTask(namespace: 'oro', description: 'Clear caches', aliases: ['occ'])]
-function cache_clear(?string $env = null, string $args = ''): void
-{
+function cache_clear(
+    ?string $env = null,
+    #[AsRawTokens]
+    array $args = []
+): void {
     $env ??= oro_env_value('ORO_ENV', 'dev');
     $envArg = \sprintf('--env=%s', $env);
-    run(dockerize(\sprintf('%s %s cache:clear %s %s', php(), console_bin(), $envArg, $args)));
+    run(dockerize(\sprintf('%s %s cache:clear %s %s', php(), console_bin(), $envArg, implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'oro', description: 'Tail Oro logs (env: ORO_ENV, ORO_LOG_FILE, ORO_LOG_LINES)')]
@@ -101,9 +120,11 @@ function logs_tail(?string $env = null, string $lines = '200'): void
 }
 
 #[AsTask(namespace: 'oro', description: 'Proxy to bin/console con ARGS', aliases: ['oc'])]
-function console(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s %s', php(), console_bin(), $args)));
+function console(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s %s', php(), console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'oro', description: 'CI helper (cache/build + tests) - composite')]

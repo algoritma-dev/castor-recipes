@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
@@ -28,9 +29,12 @@ function docker_compose(string $command): string
 }
 
 #[AsTask(name: 'composer-start', namespace: 'docker', description: 'Restart compose services')]
-function docker_compose_restart(string $services = '', string $args = ''): void
-{
-    run(\sprintf('docker compose restart %s %s', $services, $args));
+function docker_compose_restart(
+    string $services = '',
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(\sprintf('docker compose restart %s %s', $services, implode(' ', $args)));
 }
 
 #[AsTask(name: 'composer-up', namespace: 'docker', description: 'Up docker compose services')]

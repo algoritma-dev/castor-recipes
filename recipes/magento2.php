@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
@@ -9,7 +10,7 @@ use function Castor\run;
 require_once __DIR__ . '/_common.php';
 require_once __DIR__ . '/_composer.php';
 
-#[AsTask(description: 'Install Magento 2 dependencies and initial setup', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Install Magento 2 dependencies and initial setup')]
 function setup(): void
 {
     composer_install();
@@ -22,7 +23,7 @@ function setup(): void
     run(dockerize($cmd));
 }
 
-#[AsTask(description: 'Developer mode, cache flush, reindex', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Developer mode, cache flush, reindex')]
 function dev(): void
 {
     run(dockerize('php bin/magento deploy:mode:set developer'));
@@ -30,56 +31,55 @@ function dev(): void
     run(dockerize('php bin/magento indexer:reindex'));
 }
 
-#[AsTask(description: 'Run unit tests (PHPUnit)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Run unit tests (PHPUnit)')]
 function test(): void
 {
     run(dockerize('vendor/bin/phpunit'));
 }
 
-
-#[AsTask(description: 'Run setup upgrade (DB/schema updates)', namespace: 'magento', aliases: ['msu'])]
+#[AsTask(namespace: 'magento', description: 'Run setup upgrade (DB/schema updates)', aliases: ['msu'])]
 function setup_upgrade(): void
 {
     run(dockerize('php bin/magento setup:upgrade'));
 }
 
-#[AsTask(description: 'Compile DI', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Compile DI')]
 function di_compile(): void
 {
     run(dockerize('php bin/magento setup:di:compile'));
 }
 
-#[AsTask(description: 'Deploy static content (set M2_LOCALES env, default en_US)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Deploy static content (set M2_LOCALES env, default en_US)')]
 function static_deploy(string $locales = 'en_US'): void
 {
-    run(dockerize(sprintf('php bin/magento setup:static-content:deploy -f %s', $locales)));
+    run(dockerize(\sprintf('php bin/magento setup:static-content:deploy -f %s', $locales)));
 }
 
-#[AsTask(description: 'Cache clean', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Cache clean')]
 function cache_clean(): void
 {
     run(dockerize('php bin/magento cache:clean'));
 }
 
-#[AsTask(description: 'Cache flush', namespace: 'magento', aliases: ['mcf'])]
+#[AsTask(namespace: 'magento', description: 'Cache flush', aliases: ['mcf'])]
 function cache_flush(): void
 {
     run(dockerize('php bin/magento cache:flush'));
 }
 
-#[AsTask(description: 'Reindex all', namespace: 'magento', aliases: ['mri'])]
+#[AsTask(namespace: 'magento', description: 'Reindex all', aliases: ['mri'])]
 function indexer_reindex(): void
 {
     run(dockerize('php bin/magento indexer:reindex'));
 }
 
-#[AsTask(description: 'Indexer status', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Indexer status')]
 function indexer_status(): void
 {
     run(dockerize('php bin/magento indexer:status'));
 }
 
-#[AsTask(description: 'Enable a module (set M2_MODULE env)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Enable a module (set M2_MODULE env)')]
 function module_enable(string $module = ''): void
 {
     if ($module === '') {
@@ -87,10 +87,10 @@ function module_enable(string $module = ''): void
 
         return;
     }
-    run(dockerize(sprintf('php bin/magento module:enable %s', $module)));
+    run(dockerize(\sprintf('php bin/magento module:enable %s', $module)));
 }
 
-#[AsTask(description: 'Disable a module (set M2_MODULE env)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Disable a module (set M2_MODULE env)')]
 function module_disable(string $module = ''): void
 {
     if ($module === '') {
@@ -98,22 +98,22 @@ function module_disable(string $module = ''): void
 
         return;
     }
-    run(dockerize(sprintf('php bin/magento module:disable %s', $module)));
+    run(dockerize(\sprintf('php bin/magento module:disable %s', $module)));
 }
 
-#[AsTask(description: 'Enable maintenance mode', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Enable maintenance mode')]
 function maintenance_enable(): void
 {
     run(dockerize('php bin/magento maintenance:enable'));
 }
 
-#[AsTask(description: 'Disable maintenance mode', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Disable maintenance mode')]
 function maintenance_disable(): void
 {
     run(dockerize('php bin/magento maintenance:disable'));
 }
 
-#[AsTask(description: 'Run cron', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Run cron')]
 function cron_run(): void
 {
     run(dockerize('php bin/magento cron:run'));
@@ -125,55 +125,57 @@ function m2_console_bin(): string
     return env_value('M2_BIN', 'bin/magento');
 }
 
-#[AsTask(description: 'Proxy to bin/magento with ARGS', namespace: 'magento', aliases: ['mc'])]
-function console(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s %s', php(), m2_console_bin(), $args)));
+#[AsTask(namespace: 'magento', description: 'Proxy to bin/magento with ARGS', aliases: ['mc'])]
+function console(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s %s', php(), m2_console_bin(), implode(' ', $args))));
 }
 
-#[AsTask(description: 'Switch to production mode and deploy static content (composite)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Switch to production mode and deploy static content (composite)')]
 function mode_production(string $locales = 'en_US'): void
 {
     console('deploy:mode:set production');
-    console(sprintf('setup:static-content:deploy -f %s', $locales));
+    console(\sprintf('setup:static-content:deploy -f %s', $locales));
     cache_flush();
 }
 
-#[AsTask(description: 'Deploy sample data packages', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Deploy sample data packages')]
 function sampledata_deploy(): void
 {
     console('sampledata:deploy');
 }
 
-#[AsTask(description: 'Apply setup upgrade after sample data', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Apply setup upgrade after sample data')]
 function sampledata_upgrade(): void
 {
     console('setup:upgrade');
 }
 
-#[AsTask(description: 'Set configuration value (path, value, scope, scope-code)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Set configuration value (path, value, scope, scope-code)')]
 function config_set(string $path, string $value, string $scope = 'default', string $scopeCode = ''): void
 {
-    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', $scope) : '';
-    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', $scopeCode) : '';
-    console(sprintf('config:set %s %s %s %s', $path, $value, $scopeArgs, $scopeCodeArgs));
+    $scopeArgs = $scope !== '' ? \sprintf('--scope=%s', $scope) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? \sprintf('--scope-code=%s', $scopeCode) : '';
+    console(\sprintf('config:set %s %s %s %s', $path, $value, $scopeArgs, $scopeCodeArgs));
 }
 
-#[AsTask(description: 'Get configuration value (path, scope, scope-code)', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Get configuration value (path, scope, scope-code)')]
 function config_get(string $path, string $scope = '', string $scopeCode = ''): void
 {
-    $scopeArgs = $scope !== '' ? sprintf('--scope=%s', $scope) : '';
-    $scopeCodeArgs = $scopeCode !== '' ? sprintf('--scope-code=%s', $scopeCode) : '';
-    console(sprintf('config:show %s %s %s', $path, $scopeArgs, $scopeCodeArgs));
+    $scopeArgs = $scope !== '' ? \sprintf('--scope=%s', $scope) : '';
+    $scopeCodeArgs = $scopeCode !== '' ? \sprintf('--scope-code=%s', $scopeCode) : '';
+    console(\sprintf('config:show %s %s %s', $path, $scopeArgs, $scopeCodeArgs));
 }
 
-#[AsTask(description: 'Tail Magento logs', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Tail Magento logs')]
 function logs_tail(string $file = 'var/log/system.log', string $lines = '200'): void
 {
-    run(dockerize(sprintf('tail -n %s -f %s', $lines, $file)));
+    run(dockerize(\sprintf('tail -n %s -f %s', $lines, $file)));
 }
 
-#[AsTask(description: 'Project setup full (composite): composer install, setup:upgrade, di:compile, static deploy, cache flush, reindex', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'Project setup full (composite): composer install, setup:upgrade, di:compile, static deploy, cache flush, reindex')]
 function setup_full(): void
 {
     composer_install();
@@ -184,7 +186,7 @@ function setup_full(): void
     indexer_reindex();
 }
 
-#[AsTask(description: 'CI helper (compile + reindex + tests) - composite', namespace: 'magento')]
+#[AsTask(namespace: 'magento', description: 'CI helper (compile + reindex + tests) - composite')]
 function ci(): void
 {
     di_compile();

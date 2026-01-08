@@ -37,7 +37,7 @@ final class QualityCheckTest extends TestCase
         self::assertFileExists($shimLog, 'Shim log not created');
 
         $log = file_get_contents($shimLog) ?: '';
-        self::assertStringContainsString('php-cs-fixer fix --dry-run --config=.php-cs-fixer.dist.php -- src/Foo.php', $log);
+        self::assertStringContainsString('php-cs-fixer fix --config=.php-cs-fixer.dist.php -- --dry-run src/Foo.php', $log);
     }
 
     public function testPhpCsFixer(): void
@@ -84,7 +84,7 @@ final class QualityCheckTest extends TestCase
             'vendor/bin/castor',
             'qa:rector',
             '--dry-run',
-            '--args=--config=rector.php',
+            '--config=rector.php',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
@@ -108,7 +108,7 @@ final class QualityCheckTest extends TestCase
             \PHP_BINARY,
             'vendor/bin/castor',
             'qa:phpstan',
-            '--args=analyse src',
+            'analyse src',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);

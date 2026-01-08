@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
+use Castor\Helper\PathHelper;
 
 use function Castor\exit_code;
 use function Castor\io;
@@ -16,16 +18,22 @@ function sw_console_bin(): string
 }
 
 #[AsTask(namespace: 'sw', description: 'Install dependencies and prepare Shopware (system:install)', aliases: ['setup'])]
-function system_install(string $args = '--create-database --basic-setup --force'): void
-{
-    run(dockerize(\sprintf('%s %s system:install %s', php(), sw_console_bin(), $args)));
+function system_install(
+    #[AsRawTokens]
+    array $args = ['--create-database --basic-setup --force']
+): void {
+    run(dockerize(\sprintf('%s %s system:install %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Rebuild cache and indexes', aliases: ['swb'])]
-function build(bool $storefront = true, bool $admin = true, string $args = ''): void
-{
+function build(
+    bool $storefront = true,
+    bool $admin = true,
+    #[AsRawTokens]
+    array $args = []
+): void {
     cache_clear();
-    run(dockerize(\sprintf('%s %s dal:refresh:index %s', php(), sw_console_bin(), $args))); // data abstraction layer
+    run(dockerize(\sprintf('%s %s dal:refresh:index %s', php(), sw_console_bin(), implode(' ', $args)))); // data abstraction layer
     if ($storefront) {
         storefront_build();
     }
@@ -35,36 +43,47 @@ function build(bool $storefront = true, bool $admin = true, string $args = ''): 
 }
 
 #[AsTask(namespace: 'sw', description: 'Clear Shopware cache', aliases: ['cc', 'ccl'])]
-function cache_clear(string $args = '--no-debug'): void
-{
-    run(dockerize(\sprintf('%s %s cache:clear %s', php(), sw_console_bin(), $args)));
+function cache_clear(
+    #[AsRawTokens]
+    array $args = ['--no-debug']
+): void {
+    run(dockerize(\sprintf('%s %s cache:clear %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Build Storefront')]
-function storefront_build(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s storefront:build %s', php(), sw_console_bin(), $args)));
+function storefront_build(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s storefront:build %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Build Administration')]
-function administration_build(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s administration:build %s', php(), sw_console_bin(), $args)));
+function administration_build(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s administration:build %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Run PHP tests (PHPUnit)', aliases: ['swt'])]
-function test(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+function test(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s', phpunit_bin(), implode(' ', $args))));
 }
 
 #[AsTask(name: 'tests', namespace: 'qa', description: 'Run Shopware tests (PHPUnit) including custom plugins', aliases: ['t'])]
-function sw_tests(string $args = '', string $pluginGlob = 'Algoritma*'): int
-{
-    $exitCode = exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), $args)));
+function sw_tests(
+    #[AsRawTokens]
+    array $args = [],
+    string $pluginGlob = 'Algoritma*'
+): int {
+    $exitCode = exit_code(dockerize(\sprintf('%s %s', phpunit_bin(), implode(' ', $args))));
 
     // Run tests for each plugin matching the glob pattern
-    $pluginsDir = getcwd() . '/custom/plugins';
+    $pluginsDir = PathHelper::getRoot() . '/custom/plugins';
     if (is_dir($pluginsDir)) {
         $plugins = glob($pluginsDir . '/' . $pluginGlob, \GLOB_ONLYDIR);
         foreach ($plugins as $plugin) {
@@ -75,7 +94,7 @@ function sw_tests(string $args = '', string $pluginGlob = 'Algoritma*'): int
 
             if (is_file($phpunitConfig)) {
                 io()->writeln(\sprintf('Running tests for plugin: %s', basename($plugin)));
-                $pluginExitCode = exit_code(dockerize(\sprintf('%s --configuration=%s %s', phpunit_bin(), $phpunitConfig, $args)));
+                $pluginExitCode = exit_code(dockerize(\sprintf('%s --configuration=%s %s', phpunit_bin(), $phpunitConfig, implode(' ', $args))));
                 if ($pluginExitCode !== 0) {
                     $exitCode = $pluginExitCode;
                 }
@@ -87,14 +106,19 @@ function sw_tests(string $args = '', string $pluginGlob = 'Algoritma*'): int
 }
 
 #[AsTask(namespace: 'sw', description: 'Refresh plugins list', aliases: ['plugin-refresh'])]
-function plugin_refresh(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s plugin:refresh %s', php(), sw_console_bin(), $args)));
+function plugin_refresh(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s plugin:refresh %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Install and activate plugin(s). Set SW_PLUGIN_NAMES (comma/space) or SHOPWARE_PLUGIN.')]
-function plugin_install_activate(string $plugins, string $args = ''): void
-{
+function plugin_install_activate(
+    string $plugins,
+    #[AsRawTokens]
+    array $args = []
+): void {
     $plugins = preg_split('/[\s,]+/', trim($plugins)) ?: [];
     if ($plugins === [] || $plugins[0] === '') {
         run(dockerize(\sprintf('%s %s plugin:list', php(), sw_console_bin())));
@@ -103,26 +127,32 @@ function plugin_install_activate(string $plugins, string $args = ''): void
     }
 
     foreach ($plugins as $plugin) {
-        run(dockerize(\sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), $args, $plugin)));
+        run(dockerize(\sprintf('%s %s plugin:install --activate %s %s', php(), sw_console_bin(), implode(' ', $args), $plugin)));
     }
 }
 
 #[AsTask(namespace: 'sw', description: 'Compile themes')]
-function theme_compile(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s theme:compile %s', php(), sw_console_bin(), $args)));
+function theme_compile(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s theme:compile %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Run DB migrations (non-destructive)', aliases: ['swm'])]
-function migrate(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s database:migrate %s', php(), sw_console_bin(), $args)));
+function migrate(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s database:migrate %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Run DB migrations (destructive)')]
-function migrate_destructive(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s database:migrate-destructive %s', php(), sw_console_bin(), $args)));
+function migrate_destructive(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s database:migrate-destructive %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Create admin user (env: SW_ADMIN_EMAIL, SW_ADMIN_PASSWORD, names/locale)')]
@@ -143,9 +173,11 @@ function admin_create(string $email = 'admin@shopware.com', string $password = '
 }
 
 #[AsTask(namespace: 'sw', description: 'Proxy to bin/console with ARGS (env)', aliases: ['swc'])]
-function console(string $args = ''): void
-{
-    run(dockerize(\sprintf('%s %s %s', php(), sw_console_bin(), $args)));
+function console(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Project setup (composite): composer install, system:install, migrate, plugin refresh/install, theme, optional admin')]
@@ -176,9 +208,11 @@ function ci(): void
 }
 
 #[AsTask(namespace: 'sw', description: 'Clear Symfony cache pool (cache:pool:clear --all --no-debug)', aliases: ['cp'])]
-function cache_pool_clear(string $args = '--all --no-debug'): void
-{
-    run(dockerize(\sprintf('%s %s cache:pool:clear %s', php(), sw_console_bin(), $args)));
+function cache_pool_clear(
+    #[AsRawTokens]
+    array $args = ['--all --no-debug']
+): void {
+    run(dockerize(\sprintf('%s %s cache:pool:clear %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Flush Redis (FLUSHALL) - docker service configurable or local redis-cli')]
@@ -196,22 +230,27 @@ function redis_flush(string $service = 'redis'): void
 }
 
 #[AsTask(namespace: 'sw', description: 'Consume Symfony Messenger')]
-function messenger_consume(string $args = '--no-debug'): void
-{
-    run(dockerize(\sprintf('%s %s messenger:consume %s', php(), sw_console_bin(), $args)));
+function messenger_consume(
+    #[AsRawTokens]
+    array $args = ['--no-debug']
+): void {
+    run(dockerize(\sprintf('%s %s messenger:consume %s', php(), sw_console_bin(), implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Dump FOSJsRouting routes (JSON)')]
-function js_routes_dump(string $format = 'json', string $args = ''): void
-{
+function js_routes_dump(
+    string $format = 'json',
+    #[AsRawTokens]
+    array $args = []
+): void {
     $formatArg = $format !== '' ? \sprintf('--format=%s', $format) : '';
-    run(dockerize(\sprintf('%s %s fos:js-routing:dump %s %s', php(), sw_console_bin(), $formatArg, $args)));
+    run(dockerize(\sprintf('%s %s fos:js-routing:dump %s %s', php(), sw_console_bin(), $formatArg, implode(' ', $args))));
 }
 
 #[AsTask(namespace: 'sw', description: 'Remove all node_modules folders (destructive)')]
 function rm_node_modules(): void
 {
-    $root = getcwd();
+    $root = PathHelper::getRoot();
     run(\sprintf('find %s -type d -name node_modules -prune -exec rm -rf {} +', $root));
 }
 
@@ -325,8 +364,11 @@ function build_assets(): void
 }
 
 #[AsTask(namespace: 'sw', description: 'Install and activate a plugin by name (alias of plugin_install_activate)', aliases: ['plugin-install'])]
-function plugin_install(string $plugin, string $args = ''): void
-{
+function plugin_install(
+    string $plugin,
+    #[AsRawTokens]
+    array $args = []
+): void {
     plugin_install_activate($plugin, $args);
 }
 

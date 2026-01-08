@@ -235,17 +235,8 @@ final class PluginTest extends TestCase
         // choose orocommerce (index 3) arbitrarily
         [$plugin, , $messages] = $this->makeActivatedPlugin(ioSelect: 3);
 
-        $cwd = getcwd();
-        chdir($this->tmpDir);
-
-        try {
-            $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
-            $plugin->onPostPackageInstall($packageEvent);
-        } finally {
-            if ($cwd !== false) {
-                chdir($cwd);
-            }
-        }
+        $packageEvent = $this->makePackageEventForInstall('algoritma/castor-recipes');
+        $plugin->onPostPackageInstall($packageEvent);
 
         $all = $messages();
         $createdMessages = array_values(array_filter($all, fn (string $m): bool => str_contains($m, 'Created') && str_contains($m, 'castor.php')));

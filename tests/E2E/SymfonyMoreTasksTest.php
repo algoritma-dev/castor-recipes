@@ -72,7 +72,7 @@ final class SymfonyMoreTasksTest extends TestCase
     {
         $env = $this->baseEnv();
 
-        $p = Proc::run([\PHP_BINARY, 'vendor/bin/castor', 'sf:console', '--args=about'], $env, getcwd());
+        $p = Proc::run([\PHP_BINARY, 'vendor/bin/castor', 'sf:console', 'about'], $env, getcwd());
         self::assertSame(0, $p->exitCode, $p->stdout . "\n" . $p->stderr);
         $log = $this->getLog($env);
         self::assertStringContainsString('console about', $log);

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 
 use function Castor\run;
@@ -17,68 +18,86 @@ function symfony_bin(): string
     return env_value('SYMFONY_BIN', 'symfony');
 }
 
-#[AsTask(description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)', namespace: 'sf', aliases: ['sfs'])]
+#[AsTask(namespace: 'sf', description: 'Start Symfony local server (uses SYMFONY_BIN, SF_SERVER_FLAGS)', aliases: ['sfs'])]
 function serve(string $flags = '-d'): void
 {
-    run(sprintf('%s server:start %s', symfony_bin(), $flags));
+    run(\sprintf('%s server:start %s', symfony_bin(), $flags));
 }
 
-#[AsTask(description: 'Stop Symfony local server', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Stop Symfony local server')]
 function serve_stop(): void
 {
-    run(sprintf('%s server:stop', symfony_bin()));
+    run(\sprintf('%s server:stop', symfony_bin()));
 }
 
-#[AsTask(description: 'Run Doctrine migrations', namespace: 'sf', aliases: ['sfm'])]
-function migrate(string $args = '--no-interaction'): void
-{
-    run(dockerize(sprintf('%s %s doctrine:migrations:migrate %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Run Doctrine migrations', aliases: ['sfm'])]
+function migrate(
+    #[AsRawTokens]
+    array $args = ['--no-interaction']
+): void {
+    $args = $args === [] ? ['--no-interaction'] : $args;
+    console(['doctrine:migrations:migrate', ...$args]);
 }
 
-#[AsTask(description: 'Generate Doctrine migration from changes', namespace: 'sf')]
-function migrate_diff(string $args = '--no-interaction'): void
-{
-    run(dockerize(sprintf('%s %s doctrine:migrations:diff %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Generate Doctrine migration from changes')]
+function migrate_diff(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--no-interaction'] : $args;
+    console(['doctrine:migrations:diff', ...$args]);
 }
 
-#[AsTask(description: 'Clear Symfony cache', namespace: 'sf', aliases: ['sfcc'])]
-function cache_clear(string $args = '--no-debug'): void
-{
-    run(dockerize(sprintf('%s %s cache:clear %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Clear Symfony cache', aliases: ['sfcc'])]
+function cache_clear(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--no-debug'] : $args;
+    console(['cache:clear', ...$args]);
 }
 
-#[AsTask(description: 'Warm up Symfony cache', namespace: 'sf')]
-function cache_warmup(string $args = '--no-debug'): void
-{
-    run(dockerize(sprintf('%s %s cache:warmup %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Warm up Symfony cache')]
+function cache_warmup(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--no-debug'] : $args;
+    console(['cache:warmup', ...$args]);
 }
 
-#[AsTask(description: 'Clear then warm up cache (composite)', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Clear then warm up cache (composite)')]
 function cache_clear_warmup(): void
 {
     cache_clear();
     cache_warmup();
 }
 
-#[AsTask(description: 'Run tests (PHPUnit)', namespace: 'sf', aliases: ['sft'])]
-function test(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s', phpunit_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Run tests (PHPUnit)', aliases: ['sft'])]
+function test(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s', phpunit_bin(), implode(' ', $args))));
 }
 
-#[AsTask(name: 'db-create', description: 'Create database', namespace: 'sf')]
-function sf_db_create(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s doctrine:database:create --if-not-exists %s', php(), console_bin(), $args)));
+#[AsTask(name: 'db-create', namespace: 'sf', description: 'Create database')]
+function sf_db_create(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    console(['doctrine:database:create', '--if-not-exists', ...$args]);
 }
 
-#[AsTask(name: 'db-drop', description: 'Drop database', namespace: 'sf')]
-function sf_db_drop(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s doctrine:database:drop --force --if-exists %s', php(), console_bin(), $args)));
+#[AsTask(name: 'db-drop', namespace: 'sf', description: 'Drop database')]
+function sf_db_drop(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    console(['doctrine:database:drop', '--force', '--if-exists', ...$args]);
 }
 
-#[AsTask(description: 'Reset database (drop, create, migrate, fixtures) - composite', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Reset database (drop, create, migrate, fixtures) - composite')]
 function db_reset(bool $fixtures = true): void
 {
     sf_db_drop();
@@ -89,44 +108,61 @@ function db_reset(bool $fixtures = true): void
     }
 }
 
-#[AsTask(description: 'Run migrations from scratch (drop schema, migrate)', namespace: 'sf')]
-function migrate_fresh(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s doctrine:schema:drop --force --full-database', php(), console_bin())));
-    run(dockerize(sprintf('%s %s doctrine:migrations:migrate %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Run migrations from scratch (drop schema, migrate)')]
+function migrate_fresh(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    console(['doctrine:schema:drop', '--force', '--full-database', ...$args]);
+    console(['doctrine:migrations:migrate', ...$args]);
 }
 
-#[AsTask(description: 'Load Doctrine fixtures (if installed)', namespace: 'sf')]
-function fixtures_load(string $args = '--no-interaction --purge-with-truncate'): void
-{
-    run(dockerize(sprintf('%s %s doctrine:fixtures:load %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Load Doctrine fixtures (if installed)')]
+function fixtures_load(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--no-interaction --purge-with-truncate'] : $args;
+    console(['doctrine:fixtures:load', ...$args]);
 }
 
-#[AsTask(description: 'Install assets (copy/symlink)', namespace: 'sf')]
-function assets_install(string $target = 'public', string $flags = '--symlink --relative'): void
-{
-    run(dockerize(sprintf('%s %s assets:install %s %s', php(), console_bin(), $flags, $target)));
+#[AsTask(namespace: 'sf', description: 'Install assets (copy/symlink)')]
+function assets_install(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--symlink', '--relative', 'public'] : $args;
+    console(['assets:install', ...$args]);
 }
 
-#[AsTask(description: 'Lint YAML files', namespace: 'sf')]
-function lint_yaml(string $paths = 'config', string $args = '--parse-tags'): void
-{
-    run(dockerize(sprintf('%s %s lint:yaml %s %s', php(), console_bin(), $paths, $args)));
+#[AsTask(namespace: 'sf', description: 'Lint YAML files')]
+function lint_yaml(
+    string $paths = 'config',
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--parse-tags'] : $args;
+    console(['lint:yaml', $paths, ...$args]);
 }
 
-#[AsTask(description: 'Lint Twig templates', namespace: 'sf')]
-function lint_twig(string $paths = 'templates', string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s lint:twig %s %s', php(), console_bin(), $paths, $args)));
+#[AsTask(namespace: 'sf', description: 'Lint Twig templates')]
+function lint_twig(
+    string $paths = 'templates',
+    #[AsRawTokens]
+    array $args = []
+): void {
+    console(['lint:twig', $paths, ...$args]);
 }
 
-#[AsTask(description: 'Lint container', namespace: 'sf')]
-function lint_container(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s lint:container %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Lint container')]
+function lint_container(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    console(['lint:container', ...$args]);
 }
 
-#[AsTask(description: 'Run all lints (YAML, Twig, container) - composite', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Run all lints (YAML, Twig, container) - composite')]
 function lint_all(): void
 {
     lint_yaml();
@@ -134,37 +170,43 @@ function lint_all(): void
     lint_container();
 }
 
-#[AsTask(description: 'Consume Messenger messages', namespace: 'sf')]
-function messenger_consume(string $transports = 'async', string $args = '--time-limit=3600 --memory-limit=256M'): void
-{
-    run(dockerize(sprintf('%s %s messenger:consume %s %s', php(), console_bin(), $transports, $args)));
+#[AsTask(namespace: 'sf', description: 'Consume Messenger messages')]
+function messenger_consume(
+    string $transports = 'async',
+    #[AsRawTokens]
+    array $args = []
+): void {
+    $args = $args === [] ? ['--time-limit=3600 --memory-limit=256M'] : $args;
+    console(['messenger:consume', $transports, ...$args]);
 }
 
-#[AsTask(description: 'Tail Symfony logs', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Tail Symfony logs')]
 function logs_tail(string $lines = '200'): void
 {
     $env = env_value('APP_ENV', 'dev');
-    $file = env_value('SF_LOG_FILE', sprintf('var/log/%s.log', $env));
+    $file = env_value('SF_LOG_FILE', \sprintf('var/log/%s.log', $env));
 
     // Ensure the log directory and file exist to avoid tail errors, and do not follow to keep task finite for tests/CI
-    if (!is_file((string) $file)) {
-        $dir = dirname((string) $file);
-        if (!is_dir($dir)) {
-            run(dockerize(sprintf('mkdir -p %s', $dir)));
+    if (! is_file((string) $file)) {
+        $dir = \dirname((string) $file);
+        if (! is_dir($dir)) {
+            run(dockerize(\sprintf('mkdir -p %s', $dir)));
         }
-        run(dockerize(sprintf('touch %s', $file)));
+        run(dockerize(\sprintf('touch %s', $file)));
     }
 
-    run(dockerize(sprintf('tail -n %s %s', $lines, $file)));
+    run(dockerize(\sprintf('tail -n %s %s', $lines, $file)));
 }
 
-#[AsTask(description: 'Proxy to bin/console with ARGS (env)', namespace: 'sf', aliases: ['sfc'])]
-function console(string $args = ''): void
-{
-    run(dockerize(sprintf('%s %s %s', php(), console_bin(), $args)));
+#[AsTask(namespace: 'sf', description: 'Proxy to bin/console with ARGS (env)', aliases: ['sfc'])]
+function console(
+    #[AsRawTokens]
+    array $args = []
+): void {
+    run(dockerize(\sprintf('%s %s %s', php(), console_bin(), implode(' ', $args))));
 }
 
-#[AsTask(description: 'Project setup (composite): install, db create, migrate, fixtures, cache warmup, assets', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'Project setup (composite): install, db create, migrate, fixtures, cache warmup, assets')]
 function setup(bool $fixtures = true): void
 {
     composer_install();
@@ -177,7 +219,7 @@ function setup(bool $fixtures = true): void
     assets_install();
 }
 
-#[AsTask(description: 'CI helper (lints + tests) - composite', namespace: 'sf')]
+#[AsTask(namespace: 'sf', description: 'CI helper (lints + tests) - composite')]
 function ci(): void
 {
     lint_all();

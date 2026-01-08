@@ -10,32 +10,16 @@ require_once __DIR__ . '/../../recipes/_common.php';
 
 final class DotenvPathTest extends TestCase
 {
-    private string $originalCwd;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->originalCwd = getcwd();
-    }
-
-    protected function tearDown(): void
-    {
-        chdir($this->originalCwd);
-        parent::tearDown();
-    }
-
     public function testGetDotenvBasePathReturnsDefaultWhenComposerJsonNotFound(): void
     {
         // Create a temp directory without composer.json
         $tempDir = sys_get_temp_dir() . '/castor-test-no-composer-' . uniqid('', true);
         mkdir($tempDir);
-        chdir($tempDir);
 
         try {
-            $result = get_dotenv_base_path();
+            $result = get_dotenv_base_path($tempDir);
             self::assertSame('.env', $result);
         } finally {
-            chdir($this->originalCwd);
             rmdir($tempDir);
         }
     }
@@ -51,15 +35,12 @@ final class DotenvPathTest extends TestCase
             'require' => [],
         ];
 
-        file_put_contents($tempDir . '/composer.json', json_encode($composerJson, JSON_THROW_ON_ERROR));
-
-        chdir($tempDir);
+        file_put_contents($tempDir . '/composer.json', json_encode($composerJson, \JSON_THROW_ON_ERROR));
 
         try {
-            $result = get_dotenv_base_path();
+            $result = get_dotenv_base_path($tempDir);
             self::assertSame('.env', $result);
         } finally {
-            chdir($this->originalCwd);
             unlink($tempDir . '/composer.json');
             rmdir($tempDir);
         }
@@ -82,15 +63,12 @@ final class DotenvPathTest extends TestCase
             ],
         ];
 
-        file_put_contents($tempDir . '/composer.json', json_encode($composerJson, JSON_THROW_ON_ERROR));
-
-        chdir($tempDir);
+        file_put_contents($tempDir . '/composer.json', json_encode($composerJson, \JSON_THROW_ON_ERROR));
 
         try {
-            $result = get_dotenv_base_path();
+            $result = get_dotenv_base_path($tempDir);
             self::assertSame('.env-app', $result);
         } finally {
-            chdir($this->originalCwd);
             unlink($tempDir . '/composer.json');
             rmdir($tempDir);
         }
@@ -122,31 +100,26 @@ final class DotenvPathTest extends TestCase
             ],
         ];
 
-        file_put_contents($tempDir1 . '/composer.json', json_encode($composerJson1, JSON_THROW_ON_ERROR));
-        file_put_contents($tempDir2 . '/composer.json', json_encode($composerJson2, JSON_THROW_ON_ERROR));
+        file_put_contents($tempDir1 . '/composer.json', json_encode($composerJson1, \JSON_THROW_ON_ERROR));
+        file_put_contents($tempDir2 . '/composer.json', json_encode($composerJson2, \JSON_THROW_ON_ERROR));
 
         try {
             // First directory
-            chdir($tempDir1);
-            $result1 = get_dotenv_base_path();
+            $result1 = get_dotenv_base_path($tempDir1);
             self::assertSame('.env-custom1', $result1);
 
             // Second directory
-            chdir($tempDir2);
-            $result2 = get_dotenv_base_path();
+            $result2 = get_dotenv_base_path($tempDir2);
             self::assertSame('.env-custom2', $result2);
 
-            // Back to first directory - should use cached value
-            chdir($tempDir1);
-            // Modify composer.json
+            // Modify composer.json in first directory
             $composerJson1['extra']['runtime']['dotenv_path'] = '.env-modified';
-            file_put_contents($tempDir1 . '/composer.json', json_encode($composerJson1, JSON_THROW_ON_ERROR));
+            file_put_contents($tempDir1 . '/composer.json', json_encode($composerJson1, \JSON_THROW_ON_ERROR));
 
             // Should still return cached value
-            $result3 = get_dotenv_base_path();
+            $result3 = get_dotenv_base_path($tempDir1);
             self::assertSame('.env-custom1', $result3, 'Should return cached value, not re-read composer.json');
         } finally {
-            chdir($this->originalCwd);
             @unlink($tempDir1 . '/composer.json');
             @unlink($tempDir2 . '/composer.json');
             @rmdir($tempDir1);
@@ -162,15 +135,12 @@ final class DotenvPathTest extends TestCase
 
         file_put_contents($tempDir . '/composer.json', '{ invalid json }');
 
-        chdir($tempDir);
-
         try {
             $this->expectException(\JsonException::class);
-            $result = get_dotenv_base_path();
+            $result = get_dotenv_base_path($tempDir);
             // If no exception is thrown, fail the test
             self::fail('Expected JsonException to be thrown, got result: ' . $result);
         } finally {
-            chdir($this->originalCwd);
             @unlink($tempDir . '/composer.json');
             @rmdir($tempDir);
         }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Castor\Attribute\AsRawTokens;
 use Castor\Attribute\AsTask;
 
 use function Castor\exit_code;
@@ -42,11 +43,11 @@ function aspell_check_code(string $lang = 'en', bool $ignoreAll = false): int
 }
 
 #[AsTask(name: 'check-all', namespace: 'aspell', description: 'Find spelling mistakes in all files (text + code)', aliases: ['spell-all'])]
-function aspell_check_all(string $lang = 'en', string $files = '', bool $ignoreAll = false): int
+function aspell_check_all(string $lang = 'en', #[AsRawTokens] array $files = [], bool $ignoreAll = false): int
 {
     $binary = getAspellBinaryPath();
     $ignoreAllFlag = $ignoreAll ? ' --ignore-all' : '';
-    $filesArg = $files !== '' ? ' --files=' . escapeshellarg($files) : '';
+    $filesArg = $files !== '' ? ' --files=' . escapeshellarg(implode(' ', $files)) : '';
 
     return exit_code(dockerize("php {$binary} check-all --lang={$lang}{$ignoreAllFlag}{$filesArg}"));
 }

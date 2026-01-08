@@ -27,7 +27,7 @@ final class ComposerTasksTest extends TestCase
             \PHP_BINARY,
             'vendor/bin/castor',
             'composer:install',
-            '--args=--prefer-dist',
+            '--prefer-dist',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
@@ -52,7 +52,7 @@ final class ComposerTasksTest extends TestCase
             'vendor/bin/castor',
             'composer:require',
             '--dev',
-            '--args=vendor/package:^1.2',
+            'vendor/package:^1.2',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
@@ -77,7 +77,7 @@ final class ComposerTasksTest extends TestCase
             \PHP_BINARY,
             'vendor/bin/castor',
             'composer:update',
-            '--args=--with-all-dependencies',
+            '--with-all-dependencies',
         ], $env, getcwd());
 
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
