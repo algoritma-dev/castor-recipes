@@ -35,7 +35,7 @@ function pre_commit(bool $ignoreChanges = false): int
     $filesArg = '';
 
     if (! $ignoreChanges) {
-        $captured = capture('git diff --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
+        $captured = capture('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
         $modifiedFiles = array_filter(explode("\n", trim($captured)));
         $filesArg = array_map(fn (string $file): string => Path::makeRelative($file, PathHelper::getRoot()), $modifiedFiles);
     }
