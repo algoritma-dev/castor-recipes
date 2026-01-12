@@ -32,7 +32,7 @@ function phpstan_bin(): string
 #[AsTask(namespace: 'qa', description: 'Pre commit code analysis', aliases: ['pc'])]
 function pre_commit(bool $ignoreChanges = false): int
 {
-    $filesArg = '';
+    $filesArg = [];
 
     if (! $ignoreChanges) {
         $captured = capture('git diff --cached --name-only --diff-filter=ACMR | xargs -n1 --no-run-if-empty realpath');
