@@ -378,3 +378,8 @@ function db_migrate(string $env = 'dev'): void
     run(dockerize(\sprintf('%s %s database:migrate --all%s', php(), sw_console_bin(), $env)));
     run(dockerize(\sprintf('%s %s dal:refresh:index --only category.indexer --no-interaction%s', php(), sw_console_bin(), $env)));
 }
+
+#[AsTask(name: 'phpstan:bootstrap', namespace: 'sw', description: 'Run Phpstan bootstrap', aliases: ['stanboot'])]
+function sw_phpstan_bootstrap(): void {
+    run(dockerize(\sprintf('%s vendor/shopware/core/DevOps/StaticAnalyze/phpstan-bootstrap.php', php())));
+}
