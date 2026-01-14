@@ -11,8 +11,6 @@ use function Castor\run;
 
 #[AsTask(name: 'toggle', namespace: 'xdebug', description: 'Enable or disable Xdebug', aliases: ['xt'])]
 function xdebug_toggle(
-    #[AsOption(description: 'Enable or disable Xdebug')]
-    bool $enable = true,
     #[AsOption(description: 'The name of the php-fpm service')]
     string $fpmServiceName = 'php-fpm',
     #[AsOption(description: 'The name of the webserver service')]
@@ -32,6 +30,14 @@ function xdebug_toggle(
     $enabledPath = $iniPath;
     $disabledPath = "{$iniPath}.disabled";
 
+    // Check if Xdebug is currently disabled by checking if the .disabled file exists
+    $checkCommand = $isDocker
+        ? dockerize(\sprintf('test -f %s && echo "disabled" || echo "enabled"', $disabledPath), $phpService)
+        : \sprintf('test -f %s && echo "disabled" || echo "enabled"', $disabledPath);
+
+    $currentState = trim(capture($checkCommand));
+    $enable = $currentState === 'disabled';
+
     $source = $enable ? $disabledPath : $enabledPath;
     $target = $enable ? $enabledPath : $disabledPath;
     $inverseAction = $enable ? 'enabled' : 'disabled';
@@ -49,11 +55,7 @@ function xdebug_toggle(
         docker_compose_restart($webServerServiceName);
     }
 
-    if ($inverseAction === 'enabled') {
-        io()->success("Xdebug is {$inverseAction}. Run `castor xdebug` to disable it again.");
-    } else {
-        io()->success("Xdebug is {$inverseAction}. Run `castor xdebug --enable` to enable it again.");
-    }
+    io()->success("Xdebug is {$inverseAction}. Run `castor xdebug:toggle` to toggle it again.");
 }
 
 function find_xdebug_ini(): ?string
