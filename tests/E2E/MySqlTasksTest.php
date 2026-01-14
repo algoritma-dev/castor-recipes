@@ -57,7 +57,7 @@ final class MySqlTasksTest extends TestCase
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
         $log = file_get_contents($env['SHIM_DOCKER_LOG']) ?: '';
         self::assertStringContainsString('docker compose -f docker-compose.yml run --rm --workdir / mysql', $log);
-        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "DROP DATABASE IF EXISTS `appdb`"', $log);
+        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e DROP DATABASE IF EXISTS `appdb`', $log);
     }
 
     public function testDbRestoreBuildsExpectedSequence(): void
@@ -83,8 +83,8 @@ final class MySqlTasksTest extends TestCase
         self::assertSame(0, $proc->exitCode, $proc->stdout . "\n" . $proc->stderr);
         $log = file_get_contents($env['SHIM_DOCKER_LOG']) ?: '';
         // Drop, Create, then restore via cat | mysql
-        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "DROP DATABASE IF EXISTS `appdb`"', $log);
-        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e "CREATE DATABASE `appdb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"', $log);
+        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e DROP DATABASE IF EXISTS `appdb`', $log);
+        self::assertStringContainsString('mysql -u app --host=127.0.0.1 --port=3306 -e CREATE DATABASE `appdb` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $log);
         self::assertStringContainsString('-T --workdir / mysql mysql -u app --host=127.0.0.1 --port=3306 appdb', $log);
     }
 

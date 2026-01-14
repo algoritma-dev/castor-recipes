@@ -59,7 +59,7 @@ function db_drop(
     $dbService = (string) db_env_value('DOCKER_DB_SERVICE', 'database', $env);
 
     $flags = mysql_flags($user, null, null, null, $env);
-    run(dockerize(\sprintf('mysql %s -e \"DROP DATABASE IF EXISTS \`%s\`\"', $flags, $dbName), $dbService, '/'));
+    run(dockerize(\sprintf('mysql %s -e "DROP DATABASE IF EXISTS \`%s\`"', $flags, $dbName), $dbService, '/'));
 }
 
 #[AsTask(namespace: 'mysql', description: 'Create the database')]
@@ -76,7 +76,7 @@ function db_create(
     $dbService = (string) db_env_value('DOCKER_DB_SERVICE', 'database', $env);
 
     $flags = mysql_flags($user, null, null, null, $env);
-    run(dockerize(\sprintf('mysql %s -e \"CREATE DATABASE \`%s\` CHARACTER SET %s COLLATE %s\"', $flags, $dbName, $charset, $collation), $dbService, '/'));
+    run(dockerize(\sprintf('mysql %s -e "CREATE DATABASE \`%s\` CHARACTER SET %s COLLATE %s"', $flags, $dbName, $charset, $collation), $dbService, '/'));
 }
 
 #[AsTask(namespace: 'mysql', description: 'Restore database from dump file')]
